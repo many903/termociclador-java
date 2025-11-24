@@ -1,9 +1,6 @@
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.text.*;
-
-import com.fazecast.jSerialComm.SerialPort;
-
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -12,6 +9,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import com.fazecast.jSerialComm.*; // Import de jSerialComm
 
 public class TermocicladorUI extends JFrame {
     private JPanel contentPane;
@@ -19,7 +17,7 @@ public class TermocicladorUI extends JFrame {
     private JTextArea cicloTextArea;
     private Map<String, JTextField> entradas;
     private String archivoActual;
-    private Object puertoSerie;
+    private SerialPort puertoSerie; // Cambiado a SerialPort de jSerialComm
     private String currentLang = "es";
     private boolean serialRunning = false;
     private SwingWorker<Void, String> serialWorker;
@@ -36,7 +34,7 @@ public class TermocicladorUI extends JFrame {
     private static final int BAUD_RATE = 9600;
     private static final int DATA_BITS = 8;
     private static final int STOP_BITS = 1;
-    private static final int PARITY = 0; // 0 = NONE
+    private static final int PARITY = SerialPort.NO_PARITY; // Usando constante de jSerialComm
 
     private static final Map<String, Map<String, String>> TRADUCCIONES = new HashMap<>();
     
@@ -180,6 +178,14 @@ public class TermocicladorUI extends JFrame {
         setTitle(traducir("title"));
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setBounds(100, 100, 800, 700);
+        
+        // Agregar WindowListener para cerrar el puerto al salir
+        addWindowListener(new java.awt.event.WindowAdapter() {
+            @Override
+            public void windowClosing(java.awt.event.WindowEvent windowEvent) {
+                cerrarPuerto();
+            }
+        });
         
         contentPane = new JPanel();
         contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
@@ -445,6 +451,11 @@ public class TermocicladorUI extends JFrame {
         JButton btnLimpiarGrafica = new JButton("Limpiar Grafica");
         btnLimpiarGrafica.addActionListener(e -> limpiarGrafica());
         panelBotones.add(btnLimpiarGrafica);
+        
+        // Boton para cerrar puerto
+        JButton btnCerrarPuerto = new JButton("Cerrar Puerto");
+        btnCerrarPuerto.addActionListener(e -> cerrarPuerto());
+        panelBotones.add(btnCerrarPuerto);
     }
 
     private void limpiarGrafica() {
@@ -453,6 +464,19 @@ public class TermocicladorUI extends JFrame {
         tiempoInicio = System.currentTimeMillis();
         panelGrafica.repaint();
         datosArea.append("\nGrafica limpiada");
+    }
+
+    private void cerrarPuerto() {
+        serialRunning = false;
+        if (serialWorker != null) {
+            serialWorker.cancel(true);
+        }
+        if (puertoSerie != null && puertoSerie.isOpen()) {
+            puertoSerie.closePort();
+            datosArea.append("\nPuerto cerrado: " + puertoSeleccionado);
+            puertoSeleccionado = null;
+            actualizarEstado();
+        }
     }
 
     private void setLanguage(String lang) {
@@ -602,7 +626,22 @@ public class TermocicladorUI extends JFrame {
     }
 
     private void abrirPuerto() {
-        String[] opciones = {"COM1", "COM2", "COM3", "COM4", "COM5", "COM6"};
+        // Obtener lista de puertos disponibles
+        SerialPort[] puertosDisponibles = SerialPort.getCommPorts();
+        String[] opciones = new String[puertosDisponibles.length];
+        
+        for (int i = 0; i < puertosDisponibles.length; i++) {
+            opciones[i] = puertosDisponibles[i].getSystemPortName();
+        }
+        
+        if (opciones.length == 0) {
+            JOptionPane.showMessageDialog(this, 
+                "No se encontraron puertos seriales disponibles",
+                traducir("titleError"), 
+                JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        
         String seleccionActual = puertoSeleccionado != null ? puertoSeleccionado : opciones[0];
         
         String nuevoPuerto = (String) JOptionPane.showInputDialog(
@@ -622,40 +661,34 @@ public class TermocicladorUI extends JFrame {
             protected Boolean doInBackground() {
                 try {
                     publish("Conectando a " + nombrePuerto + " a " + BAUD_RATE + " baudios...");
-                    Thread.sleep(1000);
                     
-                    // Aqui se integraria con la libreria serial real
-                    // Ejemplo con jSerialComm:
+                    // Configurar y abrir puerto con jSerialComm
+                    puertoSerie = SerialPort.getCommPort(nombrePuerto);
+                    puertoSerie.setBaudRate(BAUD_RATE);
+                    puertoSerie.setNumDataBits(DATA_BITS);
+                    puertoSerie.setNumStopBits(STOP_BITS);
+                    puertoSerie.setParity(PARITY);
+                    puertoSerie.setComPortTimeouts(SerialPort.TIMEOUT_READ_SEMI_BLOCKING, 1000, 0);
                     
-                    SerialPort puerto = SerialPort.getCommPort(nombrePuerto);
-                    puerto.setBaudRate(BAUD_RATE);
-                    puerto.setNumDataBits(DATA_BITS);
-                    puerto.setNumStopBits(STOP_BITS);
-                    puerto.setParity(PARITY);
-                    puerto.openPort();
-                    
-                    // Configurar lectura continua
-                    serialRunning = true;
-                    while (serialRunning) {
-                        while (puerto.bytesAvailable() > 0) {
-                            byte[] buffer = new byte[puerto.bytesAvailable()];
-                            int bytesRead = puerto.readBytes(buffer, buffer.length);
-                            String dato = new String(buffer, 0, bytesRead);
-                            recibirDatoSerial(dato);
-                        }
-                        Thread.sleep(10);
+                    boolean abierto = puertoSerie.openPort();
+                    if (!abierto) {
+                        publish("Error: No se pudo abrir el puerto " + nombrePuerto);
+                        return false;
                     }
-                    puerto.closePort();
-                
                     
                     // Iniciar tiempo para la grafica
                     tiempoInicio = System.currentTimeMillis();
                     publish("Conexion establecida con " + nombrePuerto + " a " + BAUD_RATE + " baudios");
                     publish("Configuracion: " + DATA_BITS + " bits de datos, " + STOP_BITS + " bit de parada, Sin paridad");
                     publish("Listo para recibir datos del dispositivo...");
+                    
+                    // Iniciar lectura continua en un hilo separado
+                    serialRunning = true;
+                    new Thread(() -> leerDatosSerial()).start();
+                    
                     return true;
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
+                } catch (Exception e) {
+                    publish("Error al conectar: " + e.getMessage());
                     return false;
                 }
             }
@@ -692,6 +725,30 @@ public class TermocicladorUI extends JFrame {
         }.execute();
     }
 
+    private void leerDatosSerial() {
+        try {
+            InputStream inputStream = puertoSerie.getInputStream();
+            BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
+            
+            while (serialRunning && puertoSerie != null && puertoSerie.isOpen()) {
+                if (puertoSerie.bytesAvailable() > 0) {
+                    String linea = reader.readLine();
+                    if (linea != null) {
+                        String lineaFinal = linea.trim();
+                        SwingUtilities.invokeLater(() -> recibirDatoSerial(lineaFinal));
+                    }
+                }
+                Thread.sleep(10); // Pequena pausa para no sobrecargar el CPU
+            }
+        } catch (Exception e) {
+            if (serialRunning) {
+                SwingUtilities.invokeLater(() -> {
+                    datosArea.append("\nError en lectura serial: " + e.getMessage());
+                });
+            }
+        }
+    }
+
     // Metodo para procesar datos recibidos del dispositivo
     public void procesarDatoTemperatura(double temperatura) {
         long tiempoActual = System.currentTimeMillis() - tiempoInicio;
@@ -713,7 +770,7 @@ public class TermocicladorUI extends JFrame {
         });
     }
 
-    // Metodo para recibir datos del puerto serial (debe ser llamado desde la lectura del puerto)
+    // Metodo para recibir datos del puerto serial
     public void recibirDatoSerial(String dato) {
         try {
             // Intentar parsear el dato como numero
@@ -779,16 +836,19 @@ public class TermocicladorUI extends JFrame {
         if (puertoSeleccionado == null) {
             System.out.println("Simulacion - Enviado: " + comando);
         } else {
-            System.out.println("Enviado por puerto " + puertoSeleccionado + " a " + BAUD_RATE + " baudios: " + comando);
-            // Aqui se integraria con la libreria serial real
-            // Ejemplo con jSerialComm:
-            /*
-            SerialPort puerto = SerialPort.getCommPort(puertoSeleccionado);
-            if (puerto.isOpen()) {
-                byte[] buffer = (comando + "\n").getBytes();
-                puerto.writeBytes(buffer, buffer.length);
+            try {
+                if (puertoSerie != null && puertoSerie.isOpen()) {
+                    OutputStream outputStream = puertoSerie.getOutputStream();
+                    String comandoConSalto = comando + "\n";
+                    outputStream.write(comandoConSalto.getBytes());
+                    outputStream.flush();
+                    System.out.println("Enviado por puerto " + puertoSeleccionado + " a " + BAUD_RATE + " baudios: " + comando);
+                } else {
+                    datosArea.append("\nError: Puerto no disponible para enviar datos");
+                }
+            } catch (Exception e) {
+                datosArea.append("\nError al enviar datos: " + e.getMessage());
             }
-            */
         }
     }
 
@@ -852,6 +912,12 @@ public class TermocicladorUI extends JFrame {
         if (puertoSeleccionado != null) {
             estado.append("\n").append(traducir("puertoPrefix")).append(puertoSeleccionado);
             estado.append(" (").append(BAUD_RATE).append(" baudios)");
+            
+            if (puertoSerie != null && puertoSerie.isOpen()) {
+                estado.append(" - CONECTADO");
+            } else {
+                estado.append(" - DESCONECTADO");
+            }
         }
         
         datosArea.setText(estado.toString());
