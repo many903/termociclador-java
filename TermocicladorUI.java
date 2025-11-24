@@ -1,3 +1,4 @@
+
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.text.*;
@@ -9,7 +10,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import com.fazecast.jSerialComm.*; // Import de jSerialComm
+import com.fazecast.jSerialComm.*;
 
 public class TermocicladorUI extends JFrame {
     private JPanel contentPane;
@@ -17,7 +18,7 @@ public class TermocicladorUI extends JFrame {
     private JTextArea cicloTextArea;
     private Map<String, JTextField> entradas;
     private String archivoActual;
-    private SerialPort puertoSerie; // Cambiado a SerialPort de jSerialComm
+    private SerialPort puertoSerie;
     private String currentLang = "es";
     private boolean serialRunning = false;
     private SwingWorker<Void, String> serialWorker;
@@ -34,7 +35,7 @@ public class TermocicladorUI extends JFrame {
     private static final int BAUD_RATE = 9600;
     private static final int DATA_BITS = 8;
     private static final int STOP_BITS = 1;
-    private static final int PARITY = SerialPort.NO_PARITY; // Usando constante de jSerialComm
+    private static final int PARITY = SerialPort.NO_PARITY;
 
     private static final Map<String, Map<String, String>> TRADUCCIONES = new HashMap<>();
     
@@ -163,7 +164,6 @@ public class TermocicladorUI extends JFrame {
     }
 
     public TermocicladorUI() {
-        // Inicializar listas para la grafica
         temperaturas = new ArrayList<>();
         tiempos = new ArrayList<>();
         tiempoInicio = System.currentTimeMillis();
@@ -179,7 +179,6 @@ public class TermocicladorUI extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setBounds(100, 100, 800, 700);
         
-        // Agregar WindowListener para cerrar el puerto al salir
         addWindowListener(new java.awt.event.WindowAdapter() {
             @Override
             public void windowClosing(java.awt.event.WindowEvent windowEvent) {
@@ -192,17 +191,14 @@ public class TermocicladorUI extends JFrame {
         setContentPane(contentPane);
         contentPane.setLayout(new BorderLayout(0, 0));
         
-        // Panel principal con division
         JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
-        splitPane.setResizeWeight(0.6); // 60% para controles, 40% para grafica
+        splitPane.setResizeWeight(0.6);
         contentPane.add(splitPane, BorderLayout.CENTER);
         
-        // Panel superior - Controles
         JPanel panelControles = new JPanel();
         panelControles.setLayout(new BorderLayout());
         splitPane.setLeftComponent(panelControles);
         
-        // Panel de entrada de datos
         JPanel panelEntradas = new JPanel();
         panelEntradas.setLayout(new GridBagLayout());
         JScrollPane scrollEntradas = new JScrollPane(panelEntradas);
@@ -236,7 +232,6 @@ public class TermocicladorUI extends JFrame {
             gbc.gridy++;
         }
 
-        // Area de ciclo
         JLabel lblCiclo = new JLabel(traducir("cicloLabel"));
         gbc.gridx = 0;
         gbc.weightx = 0.3;
@@ -250,17 +245,14 @@ public class TermocicladorUI extends JFrame {
         panelEntradas.add(scrollCiclo, gbc);
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
-        // Panel inferior - Grafica
         JPanel panelInferior = new JPanel();
         panelInferior.setLayout(new BorderLayout());
         splitPane.setRightComponent(panelInferior);
         
-        // Titulo de la grafica
         JLabel tituloGrafica = new JLabel(traducir("graficaLabel"), JLabel.CENTER);
         tituloGrafica.setFont(new Font("Arial", Font.BOLD, 14));
         panelInferior.add(tituloGrafica, BorderLayout.NORTH);
         
-        // Panel de grafica
         panelGrafica = new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {
@@ -272,7 +264,6 @@ public class TermocicladorUI extends JFrame {
         panelGrafica.setPreferredSize(new Dimension(600, 300));
         panelInferior.add(panelGrafica, BorderLayout.CENTER);
 
-        // Area de datos
         datosArea = new JTextArea(traducir("datosAEnviar"));
         datosArea.setEditable(false);
         datosArea.setLineWrap(true);
@@ -292,23 +283,19 @@ public class TermocicladorUI extends JFrame {
         int width = panelGrafica.getWidth();
         int height = panelGrafica.getHeight();
         
-        // Dibujar fondo
         g2.setColor(Color.WHITE);
         g2.fillRect(0, 0, width, height);
         
         if (temperaturas.isEmpty()) {
-            // Mostrar mensaje cuando no hay datos
             g2.setColor(Color.GRAY);
             g2.drawString("Esperando datos del dispositivo...", width/2 - 100, height/2);
             return;
         }
         
-        // Calcular margenes
         int margin = 60;
         int graphWidth = width - 2 * margin;
         int graphHeight = height - 2 * margin;
         
-        // Encontrar min y max valores
         double minTemp = Double.MAX_VALUE;
         double maxTemp = -Double.MAX_VALUE;
         long minTime = Long.MAX_VALUE;
@@ -324,7 +311,6 @@ public class TermocicladorUI extends JFrame {
             if (time > maxTime) maxTime = time;
         }
         
-        // Ajustar si todos los valores son iguales
         if (minTemp == maxTemp) {
             minTemp -= 1;
             maxTemp += 1;
@@ -334,23 +320,19 @@ public class TermocicladorUI extends JFrame {
             maxTime += 1;
         }
         
-        // Dibujar ejes
         g2.setColor(Color.BLACK);
-        g2.drawLine(margin, margin, margin, margin + graphHeight); // Eje Y
-        g2.drawLine(margin, margin + graphHeight, margin + graphWidth, margin + graphHeight); // Eje X
+        g2.drawLine(margin, margin, margin, margin + graphHeight);
+        g2.drawLine(margin, margin + graphHeight, margin + graphWidth, margin + graphHeight);
         
-        // Etiquetas de ejes
         g2.drawString(traducir("ejeY"), margin - 40, margin - 10);
         g2.drawString(traducir("ejeX"), margin + graphWidth - 20, margin + graphHeight + 15);
         
-        // Dibujar lineas de la grilla
         g2.setColor(Color.LIGHT_GRAY);
         for (int i = 0; i <= 5; i++) {
             int y = margin + (graphHeight * i / 5);
             g2.drawLine(margin, y, margin + graphWidth, y);
         }
         
-        // Dibujar linea de temperatura
         g2.setColor(Color.BLUE);
         for (int i = 1; i < temperaturas.size(); i++) {
             int x1 = margin + (int)((tiempos.get(i-1) - minTime) * graphWidth / (maxTime - minTime));
@@ -361,7 +343,6 @@ public class TermocicladorUI extends JFrame {
             g2.drawLine(x1, y1, x2, y2);
         }
         
-        // Dibujar puntos
         g2.setColor(Color.RED);
         for (int i = 0; i < temperaturas.size(); i++) {
             int x = margin + (int)((tiempos.get(i) - minTime) * graphWidth / (maxTime - minTime));
@@ -370,12 +351,10 @@ public class TermocicladorUI extends JFrame {
             g2.fillOval(x - 2, y - 2, 4, 4);
         }
         
-        // Escalas
         g2.setColor(Color.BLACK);
         g2.drawString(String.format("%.1f", maxTemp), margin - 40, margin - 5);
         g2.drawString(String.format("%.1f", minTemp), margin - 40, margin + graphHeight + 5);
         
-        // Mostrar informacion de configuracion
         g2.setColor(Color.DARK_GRAY);
         g2.drawString("Baud Rate: " + BAUD_RATE, width - 150, 20);
     }
@@ -447,12 +426,10 @@ public class TermocicladorUI extends JFrame {
         btnVerificar.addActionListener(e -> verificarConexion());
         panelBotones.add(btnVerificar);
         
-        // Boton para limpiar grafica
         JButton btnLimpiarGrafica = new JButton("Limpiar Grafica");
         btnLimpiarGrafica.addActionListener(e -> limpiarGrafica());
         panelBotones.add(btnLimpiarGrafica);
         
-        // Boton para cerrar puerto
         JButton btnCerrarPuerto = new JButton("Cerrar Puerto");
         btnCerrarPuerto.addActionListener(e -> cerrarPuerto());
         panelBotones.add(btnCerrarPuerto);
@@ -626,7 +603,6 @@ public class TermocicladorUI extends JFrame {
     }
 
     private void abrirPuerto() {
-        // Obtener lista de puertos disponibles
         SerialPort[] puertosDisponibles = SerialPort.getCommPorts();
         String[] opciones = new String[puertosDisponibles.length];
         
@@ -662,7 +638,6 @@ public class TermocicladorUI extends JFrame {
                 try {
                     publish("Conectando a " + nombrePuerto + " a " + BAUD_RATE + " baudios...");
                     
-                    // Configurar y abrir puerto con jSerialComm
                     puertoSerie = SerialPort.getCommPort(nombrePuerto);
                     puertoSerie.setBaudRate(BAUD_RATE);
                     puertoSerie.setNumDataBits(DATA_BITS);
@@ -676,13 +651,11 @@ public class TermocicladorUI extends JFrame {
                         return false;
                     }
                     
-                    // Iniciar tiempo para la grafica
                     tiempoInicio = System.currentTimeMillis();
                     publish("Conexion establecida con " + nombrePuerto + " a " + BAUD_RATE + " baudios");
                     publish("Configuracion: " + DATA_BITS + " bits de datos, " + STOP_BITS + " bit de parada, Sin paridad");
                     publish("Listo para recibir datos del dispositivo...");
                     
-                    // Iniciar lectura continua en un hilo separado
                     serialRunning = true;
                     new Thread(() -> leerDatosSerial()).start();
                     
@@ -738,7 +711,7 @@ public class TermocicladorUI extends JFrame {
                         SwingUtilities.invokeLater(() -> recibirDatoSerial(lineaFinal));
                     }
                 }
-                Thread.sleep(10); // Pequena pausa para no sobrecargar el CPU
+                Thread.sleep(10);
             }
         } catch (Exception e) {
             if (serialRunning) {
@@ -749,38 +722,30 @@ public class TermocicladorUI extends JFrame {
         }
     }
 
-    // Metodo para procesar datos recibidos del dispositivo
     public void procesarDatoTemperatura(double temperatura) {
         long tiempoActual = System.currentTimeMillis() - tiempoInicio;
         
-        // Agregar a las listas
         temperaturas.add(temperatura);
         tiempos.add(tiempoActual);
         
-        // Limitar el numero de puntos
         if (temperaturas.size() > MAX_PUNTOS) {
             temperaturas.remove(0);
             tiempos.remove(0);
         }
         
-        // Actualizar la grafica
         SwingUtilities.invokeLater(() -> {
             panelGrafica.repaint();
             datosArea.append("\nTemperatura: " + String.format("%.2f", temperatura) + "°C");
         });
     }
 
-    // Metodo para recibir datos del puerto serial
     public void recibirDatoSerial(String dato) {
         try {
-            // Intentar parsear el dato como numero
             double temperatura = Double.parseDouble(dato.trim());
             procesarDatoTemperatura(temperatura);
         } catch (NumberFormatException e) {
-            // Si no es numero, mostrarlo como mensaje
             datosArea.append("\n" + dato);
             
-            // Detectar si es mensaje de terminado
             if (dato.trim().equalsIgnoreCase("terminado")) {
                 JOptionPane.showMessageDialog(this, 
                     "Proceso terminado en el dispositivo", 
@@ -865,7 +830,6 @@ public class TermocicladorUI extends JFrame {
             @Override
             protected Boolean doInBackground() {
                 try {
-                    // Enviar comando de verificacion
                     enviarDatos("listo");
                     Thread.sleep(1000);
                     return true;
