@@ -5,7 +5,9 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.*;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class TermocicladorUI extends JFrame {
@@ -18,7 +20,13 @@ public class TermocicladorUI extends JFrame {
     private String currentLang = "es";
     private boolean serialRunning = false;
     private SwingWorker<Void, String> serialWorker;
-    private String puertoSeleccionado; // Variable para mantener el puerto seleccionado
+    private String puertoSeleccionado;
+
+    // Variables para la gráfica
+    private List<Double> temperaturas;
+    private List<Long> tiempos;
+    private JPanel panelGrafica;
+    private final int MAX_PUNTOS = 50;
 
     private static final Map<String, Map<String, String>> TRADUCCIONES = new HashMap<>();
     
@@ -33,21 +41,24 @@ public class TermocicladorUI extends JFrame {
         es.put("menuArchivo", "Archivo");
         es.put("menuNuevo", "Nuevo");
         es.put("menuAbrir", "Abrir");
-        es.put("menuGuardar", "Guardar"); // NUEVO: Opción Guardar en menú
+        es.put("menuGuardar", "Guardar");
         es.put("menuAbrirPuerto", "Abrir Puerto");
         es.put("menuEjecutar", "Ejecutar");
         es.put("menuIdioma", "Idioma");
-        es.put("idioma_es", "Español");
+        es.put("idioma_es", "Espanol");
         es.put("idioma_en", "English");
-        es.put("idioma_zh", "中文");
+        es.put("idioma_zh", "Chino");
         es.put("btnNuevo", "Nuevo");
         es.put("btnAbrirArchivo", "Abrir Archivo");
-        es.put("btnGuardarArchivo", "Guardar Archivo"); // NUEVO: Botón Guardar
+        es.put("btnGuardarArchivo", "Guardar Archivo");
         es.put("btnAbrirPuerto", "Abrir Puerto");
         es.put("btnEjecutar", "Ejecutar");
-        es.put("btnVerificarConexion", "Verificar Conexión");
+        es.put("btnVerificarConexion", "Verificar Conexion");
         es.put("datosAEnviar", "Datos a Enviar:");
         es.put("cicloLabel", "Ciclo:");
+        es.put("graficaLabel", "Grafica en Tiempo Real");
+        es.put("ejeX", "Tiempo");
+        es.put("ejeY", "Temperatura");
         es.put("msgCamposLimpiados", "Campos limpiados. Ahora puede ingresar nuevos datos.");
         es.put("msgDatosGuardados", "Datos guardados exitosamente.");
         es.put("msgErrorGuardar", "Error al guardar el archivo: ");
@@ -55,30 +66,30 @@ public class TermocicladorUI extends JFrame {
         es.put("msgErrorCargar", "Error al cargar el archivo: ");
         es.put("msgPuertoConectado", "Conectado a ");
         es.put("msgErrorPuerto", "No se pudo abrir el puerto seleccionado.");
-        es.put("msgNumeroCiclosMayor", "El número de ciclos no puede ser mayor a 100.");
-        es.put("msgValorNumerico", "Ingrese un valor numérico válido para el ciclo.");
-        es.put("msgArchivoAjustado", "El archivo contenía más de 100 ciclos. Se ha ajustado a 100.");
+        es.put("msgNumeroCiclosMayor", "El numero de ciclos no puede ser mayor a 100.");
+        es.put("msgValorNumerico", "Ingrese un valor numerico valido para el ciclo.");
+        es.put("msgArchivoAjustado", "El archivo contenia mas de 100 ciclos. Se ha ajustado a 100.");
         es.put("titleError", "Error");
         es.put("titleAviso", "Aviso");
         es.put("archivoPrefix", "Archivo: ");
-        es.put("puertoPrefix", "Puerto: "); // NUEVO: Prefijo para mostrar puerto
+        es.put("puertoPrefix", "Puerto: ");
         es.put("msgSeleccionePuerto", "Seleccione el puerto:");
         es.put("tempInicial", "Temperatura Inicial");
-        es.put("tempMax", "Temperatura Máxima");
+        es.put("tempMax", "Temperatura Maxima");
         es.put("tempMed", "Temperatura Media");
-        es.put("tempMin", "Temperatura Mínima");
+        es.put("tempMin", "Temperatura Minima");
         es.put("time1", "Tiempo 1");
         es.put("time2", "Tiempo 2");
         es.put("time3", "Tiempo 3");
         es.put("time4", "Tiempo 4");
-        es.put("numCiclos", "Número de Ciclos");
+        es.put("numCiclos", "Numero de Ciclos");
 
         Map<String, String> en = new HashMap<>();
         en.put("title", "Thermocycler Interface");
         en.put("menuArchivo", "File");
         en.put("menuNuevo", "New");
         en.put("menuAbrir", "Open");
-        en.put("menuGuardar", "Save"); // NUEVO: Opción Save en menú
+        en.put("menuGuardar", "Save");
         en.put("menuAbrirPuerto", "Open Port");
         en.put("menuEjecutar", "Run");
         en.put("menuIdioma", "Language");
@@ -87,12 +98,15 @@ public class TermocicladorUI extends JFrame {
         en.put("idioma_zh", "Chinese");
         en.put("btnNuevo", "New");
         en.put("btnAbrirArchivo", "Open File");
-        en.put("btnGuardarArchivo", "Save File"); // NUEVO: Botón Save
+        en.put("btnGuardarArchivo", "Save File");
         en.put("btnAbrirPuerto", "Open Port");
         en.put("btnEjecutar", "Run");
         en.put("btnVerificarConexion", "Verify Connection");
         en.put("datosAEnviar", "Data to Send:");
         en.put("cicloLabel", "Cycle:");
+        en.put("graficaLabel", "Real Time Graph");
+        en.put("ejeX", "Time");
+        en.put("ejeY", "Temperature");
         en.put("msgCamposLimpiados", "Fields cleared. You can now enter new data.");
         en.put("msgDatosGuardados", "Data saved successfully.");
         en.put("msgErrorGuardar", "Error saving file: ");
@@ -106,7 +120,7 @@ public class TermocicladorUI extends JFrame {
         en.put("titleError", "Error");
         en.put("titleAviso", "Warning");
         en.put("archivoPrefix", "File: ");
-        en.put("puertoPrefix", "Port: "); // NUEVO: Prefijo para mostrar puerto
+        en.put("puertoPrefix", "Port: ");
         en.put("msgSeleccionePuerto", "Select port:");
         en.put("tempInicial", "Initial Temperature");
         en.put("tempMax", "Maximum Temperature");
@@ -119,49 +133,52 @@ public class TermocicladorUI extends JFrame {
         en.put("numCiclos", "Number of Cycles");
 
         Map<String, String> zh = new HashMap<>();
-        zh.put("title", "\u70ED\u5FAA\u73AF\u4EEA\u754C\u9762");
-        zh.put("menuArchivo", "\u6587\u4EF6");
-        zh.put("menuNuevo", "\u65B0\u5EFA");
-        zh.put("menuAbrir", "\u6253\u5F00");
-        zh.put("menuGuardar", "\u4FDD\u5B58"); // NUEVO: Opción Guardar en menú
-        zh.put("menuAbrirPuerto", "\u6253\u5F00\u7AEF\u53E3");
-        zh.put("menuEjecutar", "\u8FD0\u884C");
-        zh.put("menuIdioma", "\u8BED\u8A00");
-        zh.put("idioma_es", "\u897F\u73ED\u7259\u8BED");
-        zh.put("idioma_en", "\u82F1\u8BED");
-        zh.put("idioma_zh", "\u4E2D\u6587");
-        zh.put("btnNuevo", "\u65B0\u5EFA");
-        zh.put("btnAbrirArchivo", "\u6253\u5F00\u6587\u4EF6");
-        zh.put("btnGuardarArchivo", "\u4FDD\u5B58\u6587\u4EF6"); // NUEVO: Botón Guardar
-        zh.put("btnAbrirPuerto", "\u6253\u5F00\u7AEF\u53E3");
-        zh.put("btnEjecutar", "\u8FD0\u884C");
-        zh.put("btnVerificarConexion", "\u786E\u8BA4\u8FDE\u63A5");
-        zh.put("datosAEnviar", "\u8981\u53D1\u9001\u7684\u6570\u636E:");
-        zh.put("cicloLabel", "\u5FAA\u73AF:");
-        zh.put("msgCamposLimpiados", "\u5B57\u6BB5\u5DF2\u6E05\u9664\u3002\u73B0\u5728\u53EF\u4EE5\u8F93\u5165\u65B0\u6570\u636E\u3002");
-        zh.put("msgDatosGuardados", "\u6570\u636E\u5DF2\u6210\u529F\u4FDD\u5B58\u3002");
-        zh.put("msgErrorGuardar", "\u4FDD\u5B58\u6587\u4EF6\u51FA\u9519: ");
-        zh.put("msgDatosCargados", "\u6570\u636E\u5DF2\u6210\u529F\u52A0\u8F7D\u3002");
-        zh.put("msgErrorCargar", "\u52A0\u8F7D\u6587\u4EF6\u51FA\u9519: ");
-        zh.put("msgPuertoConectado", "\u5DF2\u8FDE\u63A5\u5230 ");
-        zh.put("msgErrorPuerto", "\u65E0\u6CD5\u6253\u5F00\u6240\u9009\u7AEF\u53E3\u3002");
-        zh.put("msgNumeroCiclosMayor", "\u5FAA\u73AF\u6B21\u6570\u4E0D\u80FD\u5927\u4E8E100\u3002");
-        zh.put("msgValorNumerico", "\u8BF7\u8F93\u5165\u6709\u6548\u7684\u6570\u5B57\u503C\u4F5C\u4E3A\u5FAA\u73AF\u6B21\u6570\u3002");
-        zh.put("msgArchivoAjustado", "\u6587\u4EF6\u5305\u542B\u8D85\u8FC7100\u4E2A\u5FAA\u73AF\u3002\u5DF2\u8C03\u6574\u4E3A100\u3002");
-        zh.put("titleError", "\u9519\u8BEF");
-        zh.put("titleAviso", "\u8B66\u544A");
-        zh.put("archivoPrefix", "\u6587\u4EF6: ");
-        zh.put("puertoPrefix", "\u7AEF\u53E3: "); // NUEVO: Prefijo para mostrar puerto
-        zh.put("msgSeleccionePuerto", "\u8BF7\u9009\u62E9\u7AEF\u53E3:");
-        zh.put("tempInicial", "\u521D\u59CB\u6E29\u5EA6");
-        zh.put("tempMax", "\u6700\u9AD8\u6E29\u5EA6");
-        zh.put("tempMed", "\u5E73\u5747\u6E29\u5EA6");
-        zh.put("tempMin", "\u6700\u4F4E\u6E29\u5EA6");
-        zh.put("time1", "\u65F6\u95F41");
-        zh.put("time2", "\u65F6\u95F42");
-        zh.put("time3", "\u65F6\u95F43");
-        zh.put("time4", "\u65F6\u95F44");
-        zh.put("numCiclos", "\u5FAA\u73AF\u6B21\u6570");
+        zh.put("title", "热循环仪界面");
+        zh.put("menuArchivo", "文件");
+        zh.put("menuNuevo", "新建");
+        zh.put("menuAbrir", "打开");
+        zh.put("menuGuardar", "保存");
+        zh.put("menuAbrirPuerto", "打开端口");
+        zh.put("menuEjecutar", "运行");
+        zh.put("menuIdioma", "语言");
+        zh.put("idioma_es", "西班牙语");
+        zh.put("idioma_en", "英语");
+        zh.put("idioma_zh", "中文");
+        zh.put("btnNuevo", "新建");
+        zh.put("btnAbrirArchivo", "打开文件");
+        zh.put("btnGuardarArchivo", "保存文件");
+        zh.put("btnAbrirPuerto", "打开端口");
+        zh.put("btnEjecutar", "运行");
+        zh.put("btnVerificarConexion", "验证连接");
+        zh.put("datosAEnviar", "要发送的数据:");
+        zh.put("cicloLabel", "周期:");
+        zh.put("graficaLabel", "实时图表");
+        zh.put("ejeX", "时间");
+        zh.put("ejeY", "温度");
+        zh.put("msgCamposLimpiados", "字段已清除。现在可以输入新数据。");
+        zh.put("msgDatosGuardados", "数据保存成功。");
+        zh.put("msgErrorGuardar", "保存文件错误: ");
+        zh.put("msgDatosCargados", "数据加载成功。");
+        zh.put("msgErrorCargar", "加载文件错误: ");
+        zh.put("msgPuertoConectado", "已连接到 ");
+        zh.put("msgErrorPuerto", "无法打开所选端口。");
+        zh.put("msgNumeroCiclosMayor", "循环次数不能大于100。");
+        zh.put("msgValorNumerico", "请输入有效的循环数值。");
+        zh.put("msgArchivoAjustado", "文件包含超过100个循环。已调整为100。");
+        zh.put("titleError", "错误");
+        zh.put("titleAviso", "警告");
+        zh.put("archivoPrefix", "文件: ");
+        zh.put("puertoPrefix", "端口: ");
+        zh.put("msgSeleccionePuerto", "选择端口:");
+        zh.put("tempInicial", "初始温度");
+        zh.put("tempMax", "最高温度");
+        zh.put("tempMed", "平均温度");
+        zh.put("tempMin", "最低温度");
+        zh.put("time1", "时间1");
+        zh.put("time2", "时间2");
+        zh.put("time3", "时间3");
+        zh.put("time4", "时间4");
+        zh.put("numCiclos", "循环次数");
 
         TRADUCCIONES.put("es", es);
         TRADUCCIONES.put("en", en);
@@ -182,31 +199,49 @@ public class TermocicladorUI extends JFrame {
                 TermocicladorUI frame = new TermocicladorUI();
                 frame.setVisible(true);
             } catch (Exception e) {
-                JOptionPane.showMessageDialog(null, "Error al iniciar la aplicación: " + e.getMessage(), 
+                JOptionPane.showMessageDialog(null, "Error al iniciar la aplicacion: " + e.getMessage(), 
                     "Error", JOptionPane.ERROR_MESSAGE);
             }
         });
     }
 
     public TermocicladorUI() {
+        // Inicializar listas para la grafica
+        temperaturas = new ArrayList<>();
+        tiempos = new ArrayList<>();
+        
         inicializarComponentes();
         crearMenu();
         crearBotones();
-        actualizarEstado(); // Actualizar estado al iniciar
+        actualizarEstado();
     }
 
     private void inicializarComponentes() {
         setTitle(traducir("title"));
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setBounds(100, 100, 600, 500); // Aumentado el tamaño para más espacio
+        setBounds(100, 100, 800, 700);
         
         contentPane = new JPanel();
         contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
         setContentPane(contentPane);
         contentPane.setLayout(new BorderLayout(0, 0));
         
-        JPanel panelCentral = new JPanel();
-        panelCentral.setLayout(new GridBagLayout());
+        // Panel principal con division
+        JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
+        splitPane.setResizeWeight(0.6); // 60% para controles, 40% para grafica
+        contentPane.add(splitPane, BorderLayout.CENTER);
+        
+        // Panel superior - Controles
+        JPanel panelControles = new JPanel();
+        panelControles.setLayout(new BorderLayout());
+        splitPane.setLeftComponent(panelControles);
+        
+        // Panel de entrada de datos
+        JPanel panelEntradas = new JPanel();
+        panelEntradas.setLayout(new GridBagLayout());
+        JScrollPane scrollEntradas = new JScrollPane(panelEntradas);
+        panelControles.add(scrollEntradas, BorderLayout.CENTER);
+        
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(4, 4, 4, 4);
         gbc.fill = GridBagConstraints.HORIZONTAL;
@@ -218,13 +253,13 @@ public class TermocicladorUI extends JFrame {
         for (String clave : ETIQUETAS_KEYS) {
             JLabel etiqueta = new JLabel(traducir(clave));
             gbc.gridx = 0;
-            panelCentral.add(etiqueta, gbc);
+            gbc.weightx = 0.3;
+            panelEntradas.add(etiqueta, gbc);
 
             JTextField campo = new JTextField();
             gbc.gridx = 1;
-            gbc.weightx = 1.0;
-            panelCentral.add(campo, gbc);
-            gbc.weightx = 0;
+            gbc.weightx = 0.7;
+            panelEntradas.add(campo, gbc);
 
             if ("numCiclos".equals(clave)) {
                 AbstractDocument doc = (AbstractDocument) campo.getDocument();
@@ -235,19 +270,43 @@ public class TermocicladorUI extends JFrame {
             gbc.gridy++;
         }
 
+        // Area de ciclo
         JLabel lblCiclo = new JLabel(traducir("cicloLabel"));
         gbc.gridx = 0;
-        panelCentral.add(lblCiclo, gbc);
-        cicloTextArea = new JTextArea(5, 30);
+        gbc.weightx = 0.3;
+        panelEntradas.add(lblCiclo, gbc);
+        
+        cicloTextArea = new JTextArea(3, 20);
         JScrollPane scrollCiclo = new JScrollPane(cicloTextArea);
         gbc.gridx = 1;
-        gbc.weighty = 1.0;
+        gbc.weightx = 0.7;
         gbc.fill = GridBagConstraints.BOTH;
-        panelCentral.add(scrollCiclo, gbc);
-        gbc.weighty = 0;
+        panelEntradas.add(scrollCiclo, gbc);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
 
-        contentPane.add(panelCentral, BorderLayout.CENTER);
+        // Panel inferior - Grafica
+        JPanel panelInferior = new JPanel();
+        panelInferior.setLayout(new BorderLayout());
+        splitPane.setRightComponent(panelInferior);
+        
+        // Titulo de la grafica
+        JLabel tituloGrafica = new JLabel(traducir("graficaLabel"), JLabel.CENTER);
+        tituloGrafica.setFont(new Font("Arial", Font.BOLD, 14));
+        panelInferior.add(tituloGrafica, BorderLayout.NORTH);
+        
+        // Panel de grafica
+        panelGrafica = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                dibujarGrafica(g);
+            }
+        };
+        panelGrafica.setBackground(Color.WHITE);
+        panelGrafica.setPreferredSize(new Dimension(600, 300));
+        panelInferior.add(panelGrafica, BorderLayout.CENTER);
 
+        // Area de datos
         datosArea = new JTextArea(traducir("datosAEnviar"));
         datosArea.setEditable(false);
         datosArea.setLineWrap(true);
@@ -258,6 +317,97 @@ public class TermocicladorUI extends JFrame {
 
         archivoActual = null;
         puertoSeleccionado = null;
+    }
+
+    private void dibujarGrafica(Graphics g) {
+        Graphics2D g2 = (Graphics2D) g;
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        
+        int width = panelGrafica.getWidth();
+        int height = panelGrafica.getHeight();
+        
+        // Dibujar fondo
+        g2.setColor(Color.WHITE);
+        g2.fillRect(0, 0, width, height);
+        
+        if (temperaturas.isEmpty()) {
+            // Mostrar mensaje cuando no hay datos
+            g2.setColor(Color.GRAY);
+            g2.drawString("Esperando datos del puerto serial...", width/2 - 100, height/2);
+            return;
+        }
+        
+        // Calcular margenes
+        int margin = 60;
+        int graphWidth = width - 2 * margin;
+        int graphHeight = height - 2 * margin;
+        
+        // Encontrar min y max valores
+        double minTemp = Double.MAX_VALUE;
+        double maxTemp = -Double.MAX_VALUE;
+        long minTime = Long.MAX_VALUE;
+        long maxTime = Long.MIN_VALUE;
+        
+        for (int i = 0; i < temperaturas.size(); i++) {
+            double temp = temperaturas.get(i);
+            long time = tiempos.get(i);
+            
+            if (temp < minTemp) minTemp = temp;
+            if (temp > maxTemp) maxTemp = temp;
+            if (time < minTime) minTime = time;
+            if (time > maxTime) maxTime = time;
+        }
+        
+        // Ajustar si todos los valores son iguales
+        if (minTemp == maxTemp) {
+            minTemp -= 1;
+            maxTemp += 1;
+        }
+        if (minTime == maxTime) {
+            minTime -= 1;
+            maxTime += 1;
+        }
+        
+        // Dibujar ejes
+        g2.setColor(Color.BLACK);
+        g2.drawLine(margin, margin, margin, margin + graphHeight); // Eje Y
+        g2.drawLine(margin, margin + graphHeight, margin + graphWidth, margin + graphHeight); // Eje X
+        
+        // Etiquetas de ejes
+        g2.drawString(traducir("ejeY"), margin - 40, margin - 10);
+        g2.drawString(traducir("ejeX"), margin + graphWidth - 20, margin + graphHeight + 15);
+        
+        // Dibujar lineas de la grilla
+        g2.setColor(Color.LIGHT_GRAY);
+        for (int i = 0; i <= 5; i++) {
+            int y = margin + (graphHeight * i / 5);
+            g2.drawLine(margin, y, margin + graphWidth, y);
+        }
+        
+        // Dibujar linea de temperatura
+        g2.setColor(Color.BLUE);
+        for (int i = 1; i < temperaturas.size(); i++) {
+            int x1 = margin + (int)((tiempos.get(i-1) - minTime) * graphWidth / (maxTime - minTime));
+            int y1 = margin + graphHeight - (int)((temperaturas.get(i-1) - minTemp) * graphHeight / (maxTemp - minTemp));
+            int x2 = margin + (int)((tiempos.get(i) - minTime) * graphWidth / (maxTime - minTime));
+            int y2 = margin + graphHeight - (int)((temperaturas.get(i) - minTemp) * graphHeight / (maxTemp - minTemp));
+            
+            g2.drawLine(x1, y1, x2, y2);
+        }
+        
+        // Dibujar puntos
+        g2.setColor(Color.RED);
+        for (int i = 0; i < temperaturas.size(); i++) {
+            int x = margin + (int)((tiempos.get(i) - minTime) * graphWidth / (maxTime - minTime));
+            int y = margin + graphHeight - (int)((temperaturas.get(i) - minTemp) * graphHeight / (maxTemp - minTemp));
+            
+            g2.fillOval(x - 2, y - 2, 4, 4);
+        }
+        
+        // Escalas
+        g2.setColor(Color.BLACK);
+        g2.drawString(String.format("%.1f", maxTemp), margin - 40, margin - 5);
+        g2.drawString(String.format("%.1f", minTemp), margin - 40, margin + graphHeight + 5);
     }
 
     private void crearMenu() {
@@ -275,7 +425,6 @@ public class TermocicladorUI extends JFrame {
         menuAbrir.addActionListener(e -> abrirArchivo());
         menuArchivo.add(menuAbrir);
         
-        // NUEVO: Menú Guardar
         JMenuItem menuGuardar = new JMenuItem(traducir("menuGuardar"));
         menuGuardar.addActionListener(e -> guardarDatos());
         menuArchivo.add(menuGuardar);
@@ -315,7 +464,6 @@ public class TermocicladorUI extends JFrame {
         btnAbrir.addActionListener(e -> abrirArchivo());
         panelBotones.add(btnAbrir);
         
-        // NUEVO: Botón Guardar
         JButton btnGuardar = new JButton(traducir("btnGuardarArchivo"));
         btnGuardar.addActionListener(e -> guardarDatos());
         panelBotones.add(btnGuardar);
@@ -483,13 +631,13 @@ public class TermocicladorUI extends JFrame {
         String[] opciones = {"COM1", "COM2", "COM3", "COM4"};
         String seleccionActual = puertoSeleccionado != null ? puertoSeleccionado : opciones[0];
         
-        String puertoSeleccionado = (String) JOptionPane.showInputDialog(
+        String nuevoPuerto = (String) JOptionPane.showInputDialog(
             this, traducir("msgSeleccionePuerto"), traducir("menuAbrirPuerto"),
             JOptionPane.QUESTION_MESSAGE, null, opciones, seleccionActual);
         
-        if (puertoSeleccionado != null) {
-            this.puertoSeleccionado = puertoSeleccionado;
-            conectarPuerto(puertoSeleccionado);
+        if (nuevoPuerto != null) {
+            this.puertoSeleccionado = nuevoPuerto;
+            conectarPuerto(nuevoPuerto);
             actualizarEstado();
         }
     }
@@ -499,11 +647,13 @@ public class TermocicladorUI extends JFrame {
             @Override
             protected Boolean doInBackground() {
                 try {
-                    // Simulación de conexión al puerto
-                    Thread.sleep(1000);
                     publish("Conectando a " + nombrePuerto + "...");
-                    Thread.sleep(500);
-                    publish("Conexión establecida con " + nombrePuerto);
+                    Thread.sleep(1000);
+                    
+                    // Simulacion de recepcion de datos para la grafica
+                    simularRecepcionDatos();
+                    
+                    publish("Conexion establecida con " + nombrePuerto);
                     return true;
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
@@ -525,7 +675,7 @@ public class TermocicladorUI extends JFrame {
                     if (success) {
                         JOptionPane.showMessageDialog(TermocicladorUI.this, 
                             traducir("msgPuertoConectado") + nombrePuerto, 
-                            "Conexión Exitosa", 
+                            "Conexion Exitosa", 
                             JOptionPane.INFORMATION_MESSAGE);
                     } else {
                         JOptionPane.showMessageDialog(TermocicladorUI.this, 
@@ -541,6 +691,42 @@ public class TermocicladorUI extends JFrame {
                 }
             }
         }.execute();
+    }
+
+    private void simularRecepcionDatos() {
+        // Simular recepcion de datos del puerto serial
+        new Thread(() -> {
+            double temperaturaBase = 25.0;
+            long tiempoInicio = System.currentTimeMillis();
+            
+            while (puertoSeleccionado != null) {
+                try {
+                    Thread.sleep(500); // Simular lectura cada 500ms
+                    
+                    // Generar dato de temperatura simulado
+                    double variacion = (Math.random() - 0.5) * 2.0; // ±1°C
+                    double temperatura = temperaturaBase + variacion;
+                    long tiempoActual = System.currentTimeMillis() - tiempoInicio;
+                    
+                    // Agregar a las listas
+                    temperaturas.add(temperatura);
+                    tiempos.add(tiempoActual);
+                    
+                    // Limitar el numero de puntos
+                    if (temperaturas.size() > MAX_PUNTOS) {
+                        temperaturas.remove(0);
+                        tiempos.remove(0);
+                    }
+                    
+                    // Actualizar la grafica
+                    SwingUtilities.invokeLater(() -> panelGrafica.repaint());
+                    
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+            }
+        }).start();
     }
 
     private void play() {
@@ -587,7 +773,7 @@ public class TermocicladorUI extends JFrame {
 
     private void enviarDatos(String comando) {
         if (puertoSeleccionado == null) {
-            System.out.println("Simulación - Enviado: " + comando);
+            System.out.println("Simulacion - Enviado: " + comando);
         } else {
             System.out.println("Enviado por puerto " + puertoSeleccionado + ": " + comando);
         }
@@ -606,7 +792,6 @@ public class TermocicladorUI extends JFrame {
             @Override
             protected Boolean doInBackground() {
                 try {
-                    // Simulación de verificación de conexión
                     Thread.sleep(800);
                     return true;
                 } catch (InterruptedException e) {
@@ -621,12 +806,12 @@ public class TermocicladorUI extends JFrame {
                     boolean success = get();
                     if (success) {
                         JOptionPane.showMessageDialog(TermocicladorUI.this, 
-                            "Conexión verificada correctamente con " + puertoSeleccionado, 
-                            "Conexión Exitosa", 
+                            "Conexion verificada correctamente con " + puertoSeleccionado, 
+                            "Conexion Exitosa", 
                             JOptionPane.INFORMATION_MESSAGE);
                     } else {
                         JOptionPane.showMessageDialog(TermocicladorUI.this, 
-                            "Error al verificar la conexión con " + puertoSeleccionado, 
+                            "Error al verificar la conexion con " + puertoSeleccionado, 
                             traducir("titleError"), 
                             JOptionPane.ERROR_MESSAGE);
                     }
