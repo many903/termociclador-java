@@ -18,6 +18,7 @@ public class TermocicladorUI extends JFrame {
     private String currentLang = "es";
     private boolean serialRunning = false;
     private SwingWorker<Void, String> serialWorker;
+    private String puertoSeleccionado; // Variable para mantener el puerto seleccionado
 
     private static final Map<String, Map<String, String>> TRADUCCIONES = new HashMap<>();
     
@@ -32,6 +33,7 @@ public class TermocicladorUI extends JFrame {
         es.put("menuArchivo", "Archivo");
         es.put("menuNuevo", "Nuevo");
         es.put("menuAbrir", "Abrir");
+        es.put("menuGuardar", "Guardar"); // NUEVO: Opción Guardar en menú
         es.put("menuAbrirPuerto", "Abrir Puerto");
         es.put("menuEjecutar", "Ejecutar");
         es.put("menuIdioma", "Idioma");
@@ -40,6 +42,7 @@ public class TermocicladorUI extends JFrame {
         es.put("idioma_zh", "中文");
         es.put("btnNuevo", "Nuevo");
         es.put("btnAbrirArchivo", "Abrir Archivo");
+        es.put("btnGuardarArchivo", "Guardar Archivo"); // NUEVO: Botón Guardar
         es.put("btnAbrirPuerto", "Abrir Puerto");
         es.put("btnEjecutar", "Ejecutar");
         es.put("btnVerificarConexion", "Verificar Conexión");
@@ -53,11 +56,12 @@ public class TermocicladorUI extends JFrame {
         es.put("msgPuertoConectado", "Conectado a ");
         es.put("msgErrorPuerto", "No se pudo abrir el puerto seleccionado.");
         es.put("msgNumeroCiclosMayor", "El número de ciclos no puede ser mayor a 100.");
-        es.put("msgValorNumerico", "Ingrese un valor numérico válido para la vuelta.");
+        es.put("msgValorNumerico", "Ingrese un valor numérico válido para el ciclo.");
         es.put("msgArchivoAjustado", "El archivo contenía más de 100 ciclos. Se ha ajustado a 100.");
         es.put("titleError", "Error");
         es.put("titleAviso", "Aviso");
         es.put("archivoPrefix", "Archivo: ");
+        es.put("puertoPrefix", "Puerto: "); // NUEVO: Prefijo para mostrar puerto
         es.put("msgSeleccionePuerto", "Seleccione el puerto:");
         es.put("tempInicial", "Temperatura Inicial");
         es.put("tempMax", "Temperatura Máxima");
@@ -74,20 +78,22 @@ public class TermocicladorUI extends JFrame {
         en.put("menuArchivo", "File");
         en.put("menuNuevo", "New");
         en.put("menuAbrir", "Open");
+        en.put("menuGuardar", "Save"); // NUEVO: Opción Save en menú
         en.put("menuAbrirPuerto", "Open Port");
         en.put("menuEjecutar", "Run");
         en.put("menuIdioma", "Language");
-        en.put("idioma_es", "Español");
+        en.put("idioma_es", "Spanish");
         en.put("idioma_en", "English");
-        en.put("idioma_zh", "中文");
+        en.put("idioma_zh", "Chinese");
         en.put("btnNuevo", "New");
         en.put("btnAbrirArchivo", "Open File");
+        en.put("btnGuardarArchivo", "Save File"); // NUEVO: Botón Save
         en.put("btnAbrirPuerto", "Open Port");
         en.put("btnEjecutar", "Run");
         en.put("btnVerificarConexion", "Verify Connection");
         en.put("datosAEnviar", "Data to Send:");
         en.put("cicloLabel", "Cycle:");
-        en.put("msgCamposLimpiados", "Fields cleared. You can enter new data now.");
+        en.put("msgCamposLimpiados", "Fields cleared. You can now enter new data.");
         en.put("msgDatosGuardados", "Data saved successfully.");
         en.put("msgErrorGuardar", "Error saving file: ");
         en.put("msgDatosCargados", "Data loaded successfully.");
@@ -95,11 +101,12 @@ public class TermocicladorUI extends JFrame {
         en.put("msgPuertoConectado", "Connected to ");
         en.put("msgErrorPuerto", "Could not open the selected port.");
         en.put("msgNumeroCiclosMayor", "The number of cycles cannot be greater than 100.");
-        en.put("msgValorNumerico", "Enter a valid numeric value for the cycle.");
+        en.put("msgValorNumerico", "Please enter a valid numeric value for the cycle.");
         en.put("msgArchivoAjustado", "The file contained more than 100 cycles. It has been adjusted to 100.");
         en.put("titleError", "Error");
         en.put("titleAviso", "Warning");
         en.put("archivoPrefix", "File: ");
+        en.put("puertoPrefix", "Port: "); // NUEVO: Prefijo para mostrar puerto
         en.put("msgSeleccionePuerto", "Select port:");
         en.put("tempInicial", "Initial Temperature");
         en.put("tempMax", "Maximum Temperature");
@@ -116,14 +123,16 @@ public class TermocicladorUI extends JFrame {
         zh.put("menuArchivo", "\u6587\u4EF6");
         zh.put("menuNuevo", "\u65B0\u5EFA");
         zh.put("menuAbrir", "\u6253\u5F00");
+        zh.put("menuGuardar", "\u4FDD\u5B58"); // NUEVO: Opción Guardar en menú
         zh.put("menuAbrirPuerto", "\u6253\u5F00\u7AEF\u53E3");
         zh.put("menuEjecutar", "\u8FD0\u884C");
         zh.put("menuIdioma", "\u8BED\u8A00");
-        zh.put("idioma_es", "Espa\u00F1ol");
-        zh.put("idioma_en", "English");
+        zh.put("idioma_es", "\u897F\u73ED\u7259\u8BED");
+        zh.put("idioma_en", "\u82F1\u8BED");
         zh.put("idioma_zh", "\u4E2D\u6587");
         zh.put("btnNuevo", "\u65B0\u5EFA");
         zh.put("btnAbrirArchivo", "\u6253\u5F00\u6587\u4EF6");
+        zh.put("btnGuardarArchivo", "\u4FDD\u5B58\u6587\u4EF6"); // NUEVO: Botón Guardar
         zh.put("btnAbrirPuerto", "\u6253\u5F00\u7AEF\u53E3");
         zh.put("btnEjecutar", "\u8FD0\u884C");
         zh.put("btnVerificarConexion", "\u786E\u8BA4\u8FDE\u63A5");
@@ -142,6 +151,7 @@ public class TermocicladorUI extends JFrame {
         zh.put("titleError", "\u9519\u8BEF");
         zh.put("titleAviso", "\u8B66\u544A");
         zh.put("archivoPrefix", "\u6587\u4EF6: ");
+        zh.put("puertoPrefix", "\u7AEF\u53E3: "); // NUEVO: Prefijo para mostrar puerto
         zh.put("msgSeleccionePuerto", "\u8BF7\u9009\u62E9\u7AEF\u53E3:");
         zh.put("tempInicial", "\u521D\u59CB\u6E29\u5EA6");
         zh.put("tempMax", "\u6700\u9AD8\u6E29\u5EA6");
@@ -182,12 +192,13 @@ public class TermocicladorUI extends JFrame {
         inicializarComponentes();
         crearMenu();
         crearBotones();
+        actualizarEstado(); // Actualizar estado al iniciar
     }
 
     private void inicializarComponentes() {
         setTitle(traducir("title"));
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setBounds(100, 100, 500, 400);
+        setBounds(100, 100, 600, 500); // Aumentado el tamaño para más espacio
         
         contentPane = new JPanel();
         contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
@@ -246,6 +257,7 @@ public class TermocicladorUI extends JFrame {
         contentPane.add(scrollDatos, BorderLayout.SOUTH);
 
         archivoActual = null;
+        puertoSeleccionado = null;
     }
 
     private void crearMenu() {
@@ -262,6 +274,13 @@ public class TermocicladorUI extends JFrame {
         JMenuItem menuAbrir = new JMenuItem(traducir("menuAbrir"));
         menuAbrir.addActionListener(e -> abrirArchivo());
         menuArchivo.add(menuAbrir);
+        
+        // NUEVO: Menú Guardar
+        JMenuItem menuGuardar = new JMenuItem(traducir("menuGuardar"));
+        menuGuardar.addActionListener(e -> guardarDatos());
+        menuArchivo.add(menuGuardar);
+        
+        menuArchivo.addSeparator();
         
         JMenuItem menuAbrirPuerto = new JMenuItem(traducir("menuAbrirPuerto"));
         menuAbrirPuerto.addActionListener(e -> abrirPuerto());
@@ -295,6 +314,11 @@ public class TermocicladorUI extends JFrame {
         JButton btnAbrir = new JButton(traducir("btnAbrirArchivo"));
         btnAbrir.addActionListener(e -> abrirArchivo());
         panelBotones.add(btnAbrir);
+        
+        // NUEVO: Botón Guardar
+        JButton btnGuardar = new JButton(traducir("btnGuardarArchivo"));
+        btnGuardar.addActionListener(e -> guardarDatos());
+        panelBotones.add(btnGuardar);
         
         JButton btnAbrirPuerto = new JButton(traducir("btnAbrirPuerto"));
         btnAbrirPuerto.addActionListener(e -> abrirPuerto());
@@ -341,7 +365,7 @@ public class TermocicladorUI extends JFrame {
             cicloTextArea.setText(ciclo);
         }
 
-        actualizarNombreArchivo();
+        actualizarEstado();
         revalidate();
         repaint();
     }
@@ -357,7 +381,7 @@ public class TermocicladorUI extends JFrame {
             cicloTextArea.setText("");
         }
         archivoActual = null;
-        actualizarNombreArchivo();
+        actualizarEstado();
         JOptionPane.showMessageDialog(this, traducir("msgCamposLimpiados"));
     }
 
@@ -368,7 +392,7 @@ public class TermocicladorUI extends JFrame {
         if (resultado == JFileChooser.APPROVE_OPTION) {
             archivoActual = fileChooser.getSelectedFile().getAbsolutePath();
             cargarDatos();
-            actualizarNombreArchivo();
+            actualizarEstado();
         }
     }
 
@@ -389,12 +413,15 @@ public class TermocicladorUI extends JFrame {
         
         try (PrintWriter writer = new PrintWriter(new FileWriter(archivoActual))) {
             for (String clave : ETIQUETAS_KEYS) {
-                writer.println(clave + ": " + entradas.get(clave).getText());
+                JTextField campo = entradas.get(clave);
+                if (campo != null) {
+                    writer.println(clave + ": " + campo.getText());
+                }
             }
             writer.println("ciclo: " + cicloTextArea.getText());
             
             JOptionPane.showMessageDialog(this, traducir("msgDatosGuardados"));
-            actualizarNombreArchivo();
+            actualizarEstado();
         } catch (IOException e) {
             JOptionPane.showMessageDialog(this, traducir("msgErrorGuardar") + e.getMessage(),
                     traducir("titleError"), JOptionPane.ERROR_MESSAGE);
@@ -454,39 +481,39 @@ public class TermocicladorUI extends JFrame {
 
     private void abrirPuerto() {
         String[] opciones = {"COM1", "COM2", "COM3", "COM4"};
+        String seleccionActual = puertoSeleccionado != null ? puertoSeleccionado : opciones[0];
+        
         String puertoSeleccionado = (String) JOptionPane.showInputDialog(
             this, traducir("msgSeleccionePuerto"), traducir("menuAbrirPuerto"),
-            JOptionPane.QUESTION_MESSAGE, null, opciones, opciones[0]);
+            JOptionPane.QUESTION_MESSAGE, null, opciones, seleccionActual);
         
         if (puertoSeleccionado != null) {
-            tryOpenPortWithRetries(puertoSeleccionado, 3);
+            this.puertoSeleccionado = puertoSeleccionado;
+            conectarPuerto(puertoSeleccionado);
+            actualizarEstado();
         }
     }
 
-    private void tryOpenPortWithRetries(String portName, int maxAttempts) {
+    private void conectarPuerto(String nombrePuerto) {
         new SwingWorker<Boolean, String>() {
             @Override
             protected Boolean doInBackground() {
-                for (int attempt = 1; attempt <= maxAttempts; attempt++) {
-                    publish("Intento " + attempt + " de " + maxAttempts + " en " + portName);
-                    try {
-                        Thread.sleep(200);
-                        boolean success = attempt == 2; // Simulación de éxito en segundo intento
-                        if (success) {
-                            publish("Conectado exitosamente a " + portName);
-                            return true;
-                        }
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                        return false;
-                    }
+                try {
+                    // Simulación de conexión al puerto
+                    Thread.sleep(1000);
+                    publish("Conectando a " + nombrePuerto + "...");
+                    Thread.sleep(500);
+                    publish("Conexión establecida con " + nombrePuerto);
+                    return true;
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    return false;
                 }
-                return false;
             }
 
             @Override
-            protected void process(java.util.List<String> chunks) {
-                for (String mensaje : chunks) {
+            protected void process(java.util.List<String> mensajes) {
+                for (String mensaje : mensajes) {
                     datosArea.append("\n" + mensaje);
                 }
             }
@@ -497,12 +524,12 @@ public class TermocicladorUI extends JFrame {
                     boolean success = get();
                     if (success) {
                         JOptionPane.showMessageDialog(TermocicladorUI.this, 
-                            "Conectado a " + portName, 
-                            "Éxito", 
+                            traducir("msgPuertoConectado") + nombrePuerto, 
+                            "Conexión Exitosa", 
                             JOptionPane.INFORMATION_MESSAGE);
                     } else {
                         JOptionPane.showMessageDialog(TermocicladorUI.this, 
-                            "No se pudo conectar al puerto después de " + maxAttempts + " intentos",
+                            traducir("msgErrorPuerto"),
                             traducir("titleError"), 
                             JOptionPane.ERROR_MESSAGE);
                     }
@@ -518,6 +545,14 @@ public class TermocicladorUI extends JFrame {
 
     private void play() {
         try {
+            if (puertoSeleccionado == null) {
+                JOptionPane.showMessageDialog(this, 
+                    "Primero debe seleccionar un puerto", 
+                    traducir("titleAviso"), 
+                    JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            
             StringBuilder csv = new StringBuilder();
             for (String clave : ETIQUETAS_KEYS) {
                 if (csv.length() > 0) {
@@ -551,17 +586,17 @@ public class TermocicladorUI extends JFrame {
     }
 
     private void enviarDatos(String comando) {
-        if (puertoSerie == null) {
+        if (puertoSeleccionado == null) {
             System.out.println("Simulación - Enviado: " + comando);
         } else {
-            System.out.println("Enviado por serie: " + comando);
+            System.out.println("Enviado por puerto " + puertoSeleccionado + ": " + comando);
         }
     }
 
     private void verificarConexion() {
-        if (puertoSerie == null) {
+        if (puertoSeleccionado == null) {
             JOptionPane.showMessageDialog(this, 
-                "No hay puerto abierto. Abra un puerto primero.", 
+                "No hay puerto seleccionado. Abra un puerto primero.", 
                 traducir("titleAviso"), 
                 JOptionPane.WARNING_MESSAGE);
             return;
@@ -571,7 +606,8 @@ public class TermocicladorUI extends JFrame {
             @Override
             protected Boolean doInBackground() {
                 try {
-                    Thread.sleep(1000);
+                    // Simulación de verificación de conexión
+                    Thread.sleep(800);
                     return true;
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
@@ -585,12 +621,12 @@ public class TermocicladorUI extends JFrame {
                     boolean success = get();
                     if (success) {
                         JOptionPane.showMessageDialog(TermocicladorUI.this, 
-                            "Conexión verificada correctamente", 
-                            "Éxito", 
+                            "Conexión verificada correctamente con " + puertoSeleccionado, 
+                            "Conexión Exitosa", 
                             JOptionPane.INFORMATION_MESSAGE);
                     } else {
                         JOptionPane.showMessageDialog(TermocicladorUI.this, 
-                            "Error al verificar la conexión", 
+                            "Error al verificar la conexión con " + puertoSeleccionado, 
                             traducir("titleError"), 
                             JOptionPane.ERROR_MESSAGE);
                     }
@@ -604,13 +640,20 @@ public class TermocicladorUI extends JFrame {
         }.execute();
     }
 
-    private void actualizarNombreArchivo() {
+    private void actualizarEstado() {
+        StringBuilder estado = new StringBuilder();
+        estado.append(traducir("datosAEnviar"));
+        
         if (archivoActual != null) {
             String nombreArchivo = new File(archivoActual).getName();
-            datosArea.setText(traducir("archivoPrefix") + nombreArchivo);
-        } else {
-            datosArea.setText(traducir("datosAEnviar"));
+            estado.append("\n").append(traducir("archivoPrefix")).append(nombreArchivo);
         }
+        
+        if (puertoSeleccionado != null) {
+            estado.append("\n").append(traducir("puertoPrefix")).append(puertoSeleccionado);
+        }
+        
+        datosArea.setText(estado.toString());
     }
 
     private static class FiltroNumeroCiclos extends DocumentFilter {
