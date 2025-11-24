@@ -22,7 +22,7 @@ public class TermocicladorUI extends JFrame {
     private SwingWorker<Void, String> serialWorker;
     private String puertoSeleccionado;
 
-    // Variables para la gráfica
+    // Variables para la grafica
     private List<Double> temperaturas;
     private List<Long> tiempos;
     private JPanel panelGrafica;
@@ -47,7 +47,6 @@ public class TermocicladorUI extends JFrame {
         es.put("menuIdioma", "Idioma");
         es.put("idioma_es", "Espanol");
         es.put("idioma_en", "English");
-        es.put("idioma_zh", "Chino");
         es.put("btnNuevo", "Nuevo");
         es.put("btnAbrirArchivo", "Abrir Archivo");
         es.put("btnGuardarArchivo", "Guardar Archivo");
@@ -95,7 +94,6 @@ public class TermocicladorUI extends JFrame {
         en.put("menuIdioma", "Language");
         en.put("idioma_es", "Spanish");
         en.put("idioma_en", "English");
-        en.put("idioma_zh", "Chinese");
         en.put("btnNuevo", "New");
         en.put("btnAbrirArchivo", "Open File");
         en.put("btnGuardarArchivo", "Save File");
@@ -132,57 +130,8 @@ public class TermocicladorUI extends JFrame {
         en.put("time4", "Time 4");
         en.put("numCiclos", "Number of Cycles");
 
-        Map<String, String> zh = new HashMap<>();
-        zh.put("title", "热循环仪界面");
-        zh.put("menuArchivo", "文件");
-        zh.put("menuNuevo", "新建");
-        zh.put("menuAbrir", "打开");
-        zh.put("menuGuardar", "保存");
-        zh.put("menuAbrirPuerto", "打开端口");
-        zh.put("menuEjecutar", "运行");
-        zh.put("menuIdioma", "语言");
-        zh.put("idioma_es", "西班牙语");
-        zh.put("idioma_en", "英语");
-        zh.put("idioma_zh", "中文");
-        zh.put("btnNuevo", "新建");
-        zh.put("btnAbrirArchivo", "打开文件");
-        zh.put("btnGuardarArchivo", "保存文件");
-        zh.put("btnAbrirPuerto", "打开端口");
-        zh.put("btnEjecutar", "运行");
-        zh.put("btnVerificarConexion", "验证连接");
-        zh.put("datosAEnviar", "要发送的数据:");
-        zh.put("cicloLabel", "周期:");
-        zh.put("graficaLabel", "实时图表");
-        zh.put("ejeX", "时间");
-        zh.put("ejeY", "温度");
-        zh.put("msgCamposLimpiados", "字段已清除。现在可以输入新数据。");
-        zh.put("msgDatosGuardados", "数据保存成功。");
-        zh.put("msgErrorGuardar", "保存文件错误: ");
-        zh.put("msgDatosCargados", "数据加载成功。");
-        zh.put("msgErrorCargar", "加载文件错误: ");
-        zh.put("msgPuertoConectado", "已连接到 ");
-        zh.put("msgErrorPuerto", "无法打开所选端口。");
-        zh.put("msgNumeroCiclosMayor", "循环次数不能大于100。");
-        zh.put("msgValorNumerico", "请输入有效的循环数值。");
-        zh.put("msgArchivoAjustado", "文件包含超过100个循环。已调整为100。");
-        zh.put("titleError", "错误");
-        zh.put("titleAviso", "警告");
-        zh.put("archivoPrefix", "文件: ");
-        zh.put("puertoPrefix", "端口: ");
-        zh.put("msgSeleccionePuerto", "选择端口:");
-        zh.put("tempInicial", "初始温度");
-        zh.put("tempMax", "最高温度");
-        zh.put("tempMed", "平均温度");
-        zh.put("tempMin", "最低温度");
-        zh.put("time1", "时间1");
-        zh.put("time2", "时间2");
-        zh.put("time3", "时间3");
-        zh.put("time4", "时间4");
-        zh.put("numCiclos", "循环次数");
-
         TRADUCCIONES.put("es", es);
         TRADUCCIONES.put("en", en);
-        TRADUCCIONES.put("zh", zh);
     }
 
     private String traducir(String key) {
@@ -444,11 +393,8 @@ public class TermocicladorUI extends JFrame {
         miEs.addActionListener(e -> setLanguage("es"));
         JMenuItem miEn = new JMenuItem(traducir("idioma_en"));
         miEn.addActionListener(e -> setLanguage("en"));
-        JMenuItem miZh = new JMenuItem(traducir("idioma_zh"));
-        miZh.addActionListener(e -> setLanguage("zh"));
         menuIdioma.add(miEs);
         menuIdioma.add(miEn);
-        menuIdioma.add(miZh);
         menuBar.add(menuIdioma);
     }
 
