@@ -22,11 +22,12 @@ public class TermocicladorUI extends JFrame {
     private SwingWorker<Void, String> serialWorker;
     private String puertoSeleccionado;
 
-    // Variables para la grafica
+    // Variables para la gráfica
     private List<Double> temperaturas;
     private List<Long> tiempos;
     private JPanel panelGrafica;
     private final int MAX_PUNTOS = 50;
+    private long tiempoInicio;
 
     private static final Map<String, Map<String, String>> TRADUCCIONES = new HashMap<>();
     
@@ -158,6 +159,7 @@ public class TermocicladorUI extends JFrame {
         // Inicializar listas para la grafica
         temperaturas = new ArrayList<>();
         tiempos = new ArrayList<>();
+        tiempoInicio = System.currentTimeMillis();
         
         inicializarComponentes();
         crearMenu();
@@ -282,7 +284,7 @@ public class TermocicladorUI extends JFrame {
         if (temperaturas.isEmpty()) {
             // Mostrar mensaje cuando no hay datos
             g2.setColor(Color.GRAY);
-            g2.drawString("Esperando datos del puerto serial...", width/2 - 100, height/2);
+            g2.drawString("Esperando datos del dispositivo...", width/2 - 100, height/2);
             return;
         }
         
@@ -425,6 +427,19 @@ public class TermocicladorUI extends JFrame {
         JButton btnVerificar = new JButton(traducir("btnVerificarConexion"));
         btnVerificar.addActionListener(e -> verificarConexion());
         panelBotones.add(btnVerificar);
+        
+        // Boton para limpiar grafica
+        JButton btnLimpiarGrafica = new JButton("Limpiar Grafica");
+        btnLimpiarGrafica.addActionListener(e -> limpiarGrafica());
+        panelBotones.add(btnLimpiarGrafica);
+    }
+
+    private void limpiarGrafica() {
+        temperaturas.clear();
+        tiempos.clear();
+        tiempoInicio = System.currentTimeMillis();
+        panelGrafica.repaint();
+        datosArea.append("\nGrafica limpiada");
     }
 
     private void setLanguage(String lang) {
@@ -596,10 +611,10 @@ public class TermocicladorUI extends JFrame {
                     publish("Conectando a " + nombrePuerto + "...");
                     Thread.sleep(1000);
                     
-                    // Simulacion de recepcion de datos para la grafica
-                    simularRecepcionDatos();
-                    
+                    // Iniciar tiempo para la grafica
+                    tiempoInicio = System.currentTimeMillis();
                     publish("Conexion establecida con " + nombrePuerto);
+                    publish("Listo para recibir datos del dispositivo...");
                     return true;
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
@@ -639,40 +654,45 @@ public class TermocicladorUI extends JFrame {
         }.execute();
     }
 
-    private void simularRecepcionDatos() {
-        // Simular recepcion de datos del puerto serial
-        new Thread(() -> {
-            double temperaturaBase = 25.0;
-            long tiempoInicio = System.currentTimeMillis();
+    // Metodo para procesar datos recibidos del dispositivo
+    public void procesarDatoTemperatura(double temperatura) {
+        long tiempoActual = System.currentTimeMillis() - tiempoInicio;
+        
+        // Agregar a las listas
+        temperaturas.add(temperatura);
+        tiempos.add(tiempoActual);
+        
+        // Limitar el numero de puntos
+        if (temperaturas.size() > MAX_PUNTOS) {
+            temperaturas.remove(0);
+            tiempos.remove(0);
+        }
+        
+        // Actualizar la grafica
+        SwingUtilities.invokeLater(() -> {
+            panelGrafica.repaint();
+            datosArea.append("\nTemperatura: " + String.format("%.2f", temperatura) + "°C");
+        });
+    }
+
+    // Metodo para recibir datos del puerto serial (debe ser llamado desde la lectura del puerto)
+    public void recibirDatoSerial(String dato) {
+        try {
+            // Intentar parsear el dato como numero
+            double temperatura = Double.parseDouble(dato.trim());
+            procesarDatoTemperatura(temperatura);
+        } catch (NumberFormatException e) {
+            // Si no es numero, mostrarlo como mensaje
+            datosArea.append("\n" + dato);
             
-            while (puertoSeleccionado != null) {
-                try {
-                    Thread.sleep(500); // Simular lectura cada 500ms
-                    
-                    // Generar dato de temperatura simulado
-                    double variacion = (Math.random() - 0.5) * 2.0; // ±1°C
-                    double temperatura = temperaturaBase + variacion;
-                    long tiempoActual = System.currentTimeMillis() - tiempoInicio;
-                    
-                    // Agregar a las listas
-                    temperaturas.add(temperatura);
-                    tiempos.add(tiempoActual);
-                    
-                    // Limitar el numero de puntos
-                    if (temperaturas.size() > MAX_PUNTOS) {
-                        temperaturas.remove(0);
-                        tiempos.remove(0);
-                    }
-                    
-                    // Actualizar la grafica
-                    SwingUtilities.invokeLater(() -> panelGrafica.repaint());
-                    
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    break;
-                }
+            // Detectar si es mensaje de terminado
+            if (dato.trim().equalsIgnoreCase("terminado")) {
+                JOptionPane.showMessageDialog(this, 
+                    "Proceso terminado en el dispositivo", 
+                    "Proceso Completado", 
+                    JOptionPane.INFORMATION_MESSAGE);
             }
-        }).start();
+        }
     }
 
     private void play() {
@@ -722,6 +742,7 @@ public class TermocicladorUI extends JFrame {
             System.out.println("Simulacion - Enviado: " + comando);
         } else {
             System.out.println("Enviado por puerto " + puertoSeleccionado + ": " + comando);
+            // Aqui se integraria con la libreria serial real
         }
     }
 
@@ -738,7 +759,9 @@ public class TermocicladorUI extends JFrame {
             @Override
             protected Boolean doInBackground() {
                 try {
-                    Thread.sleep(800);
+                    // Enviar comando de verificacion
+                    enviarDatos("listo");
+                    Thread.sleep(1000);
                     return true;
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
@@ -752,8 +775,8 @@ public class TermocicladorUI extends JFrame {
                     boolean success = get();
                     if (success) {
                         JOptionPane.showMessageDialog(TermocicladorUI.this, 
-                            "Conexion verificada correctamente con " + puertoSeleccionado, 
-                            "Conexion Exitosa", 
+                            "Comando de verificacion enviado a " + puertoSeleccionado, 
+                            "Verificacion Enviada", 
                             JOptionPane.INFORMATION_MESSAGE);
                     } else {
                         JOptionPane.showMessageDialog(TermocicladorUI.this, 
