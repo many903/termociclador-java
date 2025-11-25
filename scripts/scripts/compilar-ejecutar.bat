@@ -9,6 +9,10 @@ echo Limpiando compilaciones anteriores...
 if exist bin ( rmdir /s /q bin )
 mkdir bin
 
+echo Copiando recursos...
+if not exist bin\resources ( mkdir bin\resources )
+if exist resources ( xcopy /Y resources\* bin\resources\ )
+
 echo Compilando codigo fuente...
 javac -d bin -cp "src;lib/jSerialComm-2.11.4.jar" src/TermocicladorUI.java
 

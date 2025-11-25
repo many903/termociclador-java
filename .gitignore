@@ -1,0 +1,20 @@
+# Archivos compilados
+bin/
+*.class
+*.jar
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Archivos temporales
+*.tmp
+*.temp
+
+# Backup files
+*.bak
+*.backup
