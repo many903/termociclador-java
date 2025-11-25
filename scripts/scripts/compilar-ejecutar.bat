@@ -16,6 +16,7 @@ if exist resources ( xcopy /Y resources\* bin\resources\ )
 echo Compilando codigo fuente...
 javac -d bin -cp "src;lib/jSerialComm-2.11.4.jar" src/TermocicladorUI.java
 
+
 if %errorlevel% neq 0 (
     echo.
     echo ERROR: Compilacion fallida!
