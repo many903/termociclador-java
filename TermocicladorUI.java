@@ -23,12 +23,15 @@ public class TermocicladorUI extends JFrame {
     private SwingWorker<Void, String> serialWorker;
     private String puertoSeleccionado;
 
-    // Variables para la gráfica
+    // Variables para la gráfica en tiempo real
     private List<Double> temperaturas;
     private List<Long> tiempos;
     private JPanel panelGrafica;
     private final int MAX_PUNTOS = 50;
     private long tiempoInicio;
+
+    // Panel para el gráfico de ciclo térmico estático
+    private JPanel panelCicloTermico;
 
     // Configuración del puerto serial
     private static final int BAUD_RATE = 9600;
@@ -53,17 +56,18 @@ public class TermocicladorUI extends JFrame {
         es.put("menuAbrirPuerto", "Abrir Puerto");
         es.put("menuEjecutar", "Ejecutar");
         es.put("menuIdioma", "Idioma");
-        es.put("idioma_es", "Espanol");
+        es.put("idioma_es", "Español");
         es.put("idioma_en", "English");
         es.put("btnNuevo", "Nuevo");
         es.put("btnAbrirArchivo", "Abrir Archivo");
         es.put("btnGuardarArchivo", "Guardar Archivo");
         es.put("btnAbrirPuerto", "Abrir Puerto");
         es.put("btnEjecutar", "Ejecutar");
-        es.put("btnVerificarConexion", "Verificar Conexion");
+        es.put("btnVerificarConexion", "Verificar Conexión");
         es.put("datosAEnviar", "Datos a Enviar:");
         es.put("cicloLabel", "Ciclo:");
-        es.put("graficaLabel", "Grafica en Tiempo Real");
+        es.put("graficaLabel", "Gráfica en Tiempo Real");
+        es.put("cicloTermicoLabel", "Diagrama de Ciclo Térmico");
         es.put("ejeX", "Tiempo");
         es.put("ejeY", "Temperatura");
         es.put("msgCamposLimpiados", "Campos limpiados. Ahora puede ingresar nuevos datos.");
@@ -73,23 +77,23 @@ public class TermocicladorUI extends JFrame {
         es.put("msgErrorCargar", "Error al cargar el archivo: ");
         es.put("msgPuertoConectado", "Conectado a ");
         es.put("msgErrorPuerto", "No se pudo abrir el puerto seleccionado.");
-        es.put("msgNumeroCiclosMayor", "El numero de ciclos no puede ser mayor a 100.");
-        es.put("msgValorNumerico", "Ingrese un valor numerico valido para el ciclo.");
-        es.put("msgArchivoAjustado", "El archivo contenia mas de 100 ciclos. Se ha ajustado a 100.");
+        es.put("msgNumeroCiclosMayor", "El número de ciclos no puede ser mayor a 100.");
+        es.put("msgValorNumerico", "Ingrese un valor numérico válido para el ciclo.");
+        es.put("msgArchivoAjustado", "El archivo contenía más de 100 ciclos. Se ha ajustado a 100.");
         es.put("titleError", "Error");
         es.put("titleAviso", "Aviso");
         es.put("archivoPrefix", "Archivo: ");
         es.put("puertoPrefix", "Puerto: ");
         es.put("msgSeleccionePuerto", "Seleccione el puerto:");
         es.put("tempInicial", "Temperatura Inicial");
-        es.put("tempMax", "Temperatura Maxima");
+        es.put("tempMax", "Temperatura Máxima");
         es.put("tempMed", "Temperatura Media");
-        es.put("tempMin", "Temperatura Minima");
+        es.put("tempMin", "Temperatura Mínima");
         es.put("time1", "Tiempo 1");
         es.put("time2", "Tiempo 2");
         es.put("time3", "Tiempo 3");
         es.put("time4", "Tiempo 4");
-        es.put("numCiclos", "Numero de Ciclos");
+        es.put("numCiclos", "Número de Ciclos");
 
         Map<String, String> en = new HashMap<>();
         en.put("title", "Thermocycler Interface");
@@ -111,6 +115,7 @@ public class TermocicladorUI extends JFrame {
         en.put("datosAEnviar", "Data to Send:");
         en.put("cicloLabel", "Cycle:");
         en.put("graficaLabel", "Real Time Graph");
+        en.put("cicloTermicoLabel", "Thermal Cycle Diagram");
         en.put("ejeX", "Time");
         en.put("ejeY", "Temperature");
         en.put("msgCamposLimpiados", "Fields cleared. You can now enter new data.");
@@ -156,7 +161,7 @@ public class TermocicladorUI extends JFrame {
                 TermocicladorUI frame = new TermocicladorUI();
                 frame.setVisible(true);
             } catch (Exception e) {
-                JOptionPane.showMessageDialog(null, "Error al iniciar la aplicacion: " + e.getMessage(), 
+                JOptionPane.showMessageDialog(null, "Error al iniciar la aplicación: " + e.getMessage(), 
                     "Error", JOptionPane.ERROR_MESSAGE);
             }
         });
@@ -167,82 +172,16 @@ public class TermocicladorUI extends JFrame {
         tiempos = new ArrayList<>();
         tiempoInicio = System.currentTimeMillis();
         
-        // Crear imagen automáticamente si no existe
-        crearImagenAutomatica();
-        
         inicializarComponentes();
         crearMenu();
         crearBotones();
         actualizarEstado();
     }
 
-    // Método para crear una imagen automáticamente
-    private void crearImagenAutomatica() {
-        File imagenFile = new File("grafica1.JPG");
-        if (!imagenFile.exists()) {
-            try {
-                // Crear una imagen programáticamente
-                int width = 400;
-                int height = 300;
-                BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
-                Graphics2D g2d = image.createGraphics();
-                
-                // Fondo blanco
-                g2d.setColor(Color.WHITE);
-                g2d.fillRect(0, 0, width, height);
-                
-                // Dibujar un gráfico de ejemplo
-                g2d.setColor(Color.BLUE);
-                g2d.setStroke(new BasicStroke(3));
-                
-                // Dibujar ejes
-                g2d.setColor(Color.BLACK);
-                g2d.drawLine(50, 50, 50, 250); // Eje Y
-                g2d.drawLine(50, 250, 350, 250); // Eje X
-                
-                // Etiquetas de ejes
-                g2d.drawString("Temperatura (°C)", 10, 30);
-                g2d.drawString("Tiempo (min)", 300, 270);
-                
-                // Dibujar curva de temperatura
-                g2d.setColor(Color.RED);
-                int[] xPoints = {60, 100, 140, 180, 220, 260, 300, 340};
-                int[] yPoints = {200, 180, 150, 100, 150, 180, 200, 180};
-                g2d.drawPolyline(xPoints, yPoints, 8);
-                
-                // Puntos en la curva
-                g2d.setColor(Color.RED);
-                for (int i = 0; i < xPoints.length; i++) {
-                    g2d.fillOval(xPoints[i] - 3, yPoints[i] - 3, 6, 6);
-                }
-                
-                // Título
-                g2d.setColor(Color.BLACK);
-                g2d.setFont(new Font("Arial", Font.BOLD, 16));
-                g2d.drawString("Ciclo de Temperatura PCR", 120, 30);
-                
-                // Leyenda
-                g2d.setFont(new Font("Arial", Font.PLAIN, 12));
-                g2d.drawString("Desnaturalización: 95°C", 200, 80);
-                g2d.drawString("Alienamiento: 55°C", 200, 100);
-                g2d.drawString("Extensión: 72°C", 200, 120);
-                
-                g2d.dispose();
-                
-                // Guardar la imagen
-                javax.imageio.ImageIO.write(image, "JPG", imagenFile);
-                System.out.println("Imagen creada automáticamente: " + imagenFile.getAbsolutePath());
-                
-            } catch (Exception e) {
-                System.out.println("No se pudo crear la imagen automáticamente: " + e.getMessage());
-            }
-        }
-    }
-
     private void inicializarComponentes() {
         setTitle(traducir("title"));
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setBounds(100, 100, 800, 700);
+        setBounds(100, 100, 1000, 800);
         
         addWindowListener(new java.awt.event.WindowAdapter() {
             @Override
@@ -256,13 +195,23 @@ public class TermocicladorUI extends JFrame {
         setContentPane(contentPane);
         contentPane.setLayout(new BorderLayout(0, 0));
         
-        JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
-        splitPane.setResizeWeight(0.6);
-        contentPane.add(splitPane, BorderLayout.CENTER);
+        // Panel principal con split pane
+        JSplitPane splitPanePrincipal = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
+        splitPanePrincipal.setResizeWeight(0.5);
+        contentPane.add(splitPanePrincipal, BorderLayout.CENTER);
         
+        // Panel izquierdo - Controles y entradas
+        JPanel panelIzquierdo = new JPanel(new BorderLayout());
+        splitPanePrincipal.setLeftComponent(panelIzquierdo);
+        
+        // Panel derecho - Gráficos
+        JPanel panelDerecho = new JPanel(new BorderLayout());
+        splitPanePrincipal.setRightComponent(panelDerecho);
+        
+        // ===== PANEL IZQUIERDO - CONTROLES =====
         JPanel panelControles = new JPanel();
         panelControles.setLayout(new BorderLayout());
-        splitPane.setLeftComponent(panelControles);
+        panelIzquierdo.add(panelControles, BorderLayout.CENTER);
         
         JPanel panelEntradas = new JPanel();
         panelEntradas.setLayout(new GridBagLayout());
@@ -297,75 +246,40 @@ public class TermocicladorUI extends JFrame {
             gbc.gridy++;
         }
 
-        // ====== IMAGEN EN LUGAR DEL AREA DE CICLO ======
-        JLabel lblImagen = new JLabel();
-        lblImagen.setHorizontalAlignment(SwingConstants.CENTER);
-        lblImagen.setVerticalAlignment(SwingConstants.CENTER);
+        // ===== PANEL DERECHO - GRÁFICOS =====
+        // Gráfico de ciclo térmico estático
+        JPanel panelCicloContainer = new JPanel(new BorderLayout());
+        panelCicloContainer.setBorder(BorderFactory.createTitledBorder(traducir("cicloTermicoLabel")));
+        panelDerecho.add(panelCicloContainer, BorderLayout.CENTER);
         
-        // Cargar la imagen (ya debería existir porque se crea automáticamente)
-        ImageIcon icono = cargarImagen();
-        if (icono != null) {
-            lblImagen.setIcon(icono);
-            lblImagen.setToolTipText("Diagrama de referencia del termociclador - Ciclo PCR");
-        } else {
-            // Fallback: crear un panel con información
-            lblImagen.setText("<html><div style='text-align: center; padding: 20px;'>"
-                    + "<h3>Referencia del Termociclador</h3>"
-                    + "<p>Ciclo típico de PCR:</p>"
-                    + "<p>• Desnaturalización: 95°C</p>"
-                    + "<p>• Alienamiento: 55-65°C</p>"
-                    + "<p>• Extensión: 72°C</p>"
-                    + "</div></html>");
-            lblImagen.setOpaque(true);
-            lblImagen.setBackground(new Color(230, 240, 255));
-            lblImagen.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(0, 100, 200), 2),
-                BorderFactory.createEmptyBorder(10, 10, 10, 10)
-            ));
-            lblImagen.setForeground(Color.DARK_GRAY);
-        }
-
-        // Configurar para que ocupe el espacio del área de ciclo
-        gbc.gridx = 0;
-        gbc.gridwidth = 2;
-        gbc.weightx = 1.0;
-        gbc.weighty = 0.4;
-        gbc.fill = GridBagConstraints.BOTH;
-        gbc.insets = new Insets(15, 10, 15, 10);
-        gbc.anchor = GridBagConstraints.CENTER;
+        panelCicloTermico = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                dibujarCicloTermico(g);
+            }
+        };
+        panelCicloTermico.setBackground(Color.WHITE);
+        panelCicloTermico.setPreferredSize(new Dimension(400, 300));
+        panelCicloContainer.add(panelCicloTermico, BorderLayout.CENTER);
         
-        // Establecer tamaño preferido
-        lblImagen.setPreferredSize(new Dimension(300, 200));
-        lblImagen.setMinimumSize(new Dimension(250, 150));
-        
-        panelEntradas.add(lblImagen, gbc);
-        
-        // Restaurar configuración para elementos siguientes
-        gbc.gridwidth = 1;
-        gbc.weighty = 0;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.insets = new Insets(4, 4, 4, 4);
-        gbc.gridy++;
-
-        JPanel panelInferior = new JPanel();
-        panelInferior.setLayout(new BorderLayout());
-        splitPane.setRightComponent(panelInferior);
-        
-        JLabel tituloGrafica = new JLabel(traducir("graficaLabel"), JLabel.CENTER);
-        tituloGrafica.setFont(new Font("Arial", Font.BOLD, 14));
-        panelInferior.add(tituloGrafica, BorderLayout.NORTH);
+        // Gráfica en tiempo real en la parte inferior del panel derecho
+        JPanel panelGraficaContainer = new JPanel(new BorderLayout());
+        panelGraficaContainer.setBorder(BorderFactory.createTitledBorder(traducir("graficaLabel")));
+        panelDerecho.add(panelGraficaContainer, BorderLayout.SOUTH);
         
         panelGrafica = new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
-                dibujarGrafica(g);
+                dibujarGraficaTiempoReal(g);
             }
         };
         panelGrafica.setBackground(Color.WHITE);
-        panelGrafica.setPreferredSize(new Dimension(600, 300));
-        panelInferior.add(panelGrafica, BorderLayout.CENTER);
+        panelGrafica.setPreferredSize(new Dimension(400, 200));
+        panelGraficaContainer.add(panelGrafica, BorderLayout.CENTER);
 
+        // Área de datos en la parte inferior de la ventana principal
         datosArea = new JTextArea(traducir("datosAEnviar"));
         datosArea.setEditable(false);
         datosArea.setLineWrap(true);
@@ -378,42 +292,118 @@ public class TermocicladorUI extends JFrame {
         puertoSeleccionado = null;
     }
 
-    // Método mejorado para cargar imagen
-    private ImageIcon cargarImagen() {
-        String[] posiblesRutas = {
-            "grafica1.JPG",
-            "./grafica1.JPG",
-            "resources/grafica1.JPG",
-            "./resources/grafica1.JPG"
+    private void dibujarCicloTermico(Graphics g) {
+        Graphics2D g2 = (Graphics2D) g;
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        
+        int width = panelCicloTermico.getWidth();
+        int height = panelCicloTermico.getHeight();
+        
+        // Fondo blanco
+        g2.setColor(Color.WHITE);
+        g2.fillRect(0, 0, width, height);
+        
+        int margin = 60;
+        int graphWidth = width - 2 * margin;
+        int graphHeight = height - 2 * margin;
+        
+        // Dibujar ejes
+        g2.setColor(Color.BLACK);
+        g2.drawLine(margin, margin, margin, margin + graphHeight); // Eje Y
+        g2.drawLine(margin, margin + graphHeight, margin + graphWidth, margin + graphHeight); // Eje X
+        
+        // Etiquetas de ejes
+        g2.drawString(traducir("ejeY"), margin - 50, margin - 10);
+        g2.drawString(traducir("ejeX"), margin + graphWidth - 30, margin + graphHeight + 15);
+        
+        // Niveles de temperatura (de acuerdo a tu descripción)
+        int temp1Y = margin + (int)(0.1 * graphHeight);        // Temperatura 1 (más alta)
+        int temp3Y = margin + (int)(0.3 * graphHeight);        // Temperatura 3
+        int temp2Y = margin + (int)(0.5 * graphHeight);        // Temperatura 2
+        int temp4Y = margin + (int)(0.9 * graphHeight);        // Temperatura 4 (más baja)
+        
+        // Líneas de referencia de temperatura
+        g2.setColor(Color.BLUE);
+        g2.setStroke(new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, new float[]{5}, 0));
+        g2.drawLine(margin, temp1Y, margin + graphWidth, temp1Y);
+        g2.drawLine(margin, temp3Y, margin + graphWidth, temp3Y);
+        g2.drawLine(margin, temp2Y, margin + graphWidth, temp2Y);
+        g2.drawLine(margin, temp4Y, margin + graphWidth, temp4Y);
+        
+        // Etiquetas de temperatura
+        g2.setColor(Color.BLUE);
+        g2.drawString("Temperatura 1", margin - 55, temp1Y - 5);
+        g2.drawString("Temperatura 3", margin - 55, temp3Y - 5);
+        g2.drawString("Temperatura 2", margin - 55, temp2Y - 5);
+        g2.drawString("Temperatura 4", margin - 55, temp4Y - 5);
+        
+        // Etiquetas de tiempo
+        int time1X = margin + (int)(0.2 * graphWidth);
+        int time2X = margin + (int)(0.4 * graphWidth);
+        int time3X = margin + (int)(0.6 * graphWidth);
+        int time4X = margin + (int)(0.9 * graphWidth);
+        
+        g2.setColor(Color.BLACK);
+        g2.drawString("Tiempo 1", time1X - 15, margin + graphHeight + 15);
+        g2.drawString("Tiempo 2", time2X - 15, margin + graphHeight + 15);
+        g2.drawString("Tiempo 3", time3X - 15, margin + graphHeight + 15);
+        g2.drawString("Tiempo 4", time4X - 15, margin + graphHeight + 15);
+        
+        // Dibujar la curva del ciclo térmico
+        g2.setColor(Color.RED);
+        g2.setStroke(new BasicStroke(2));
+        
+        // Puntos de la curva según tu descripción
+        int[] xPoints = {
+            margin,                          // Inicio en Tiempo 0, Temperatura 4
+            time1X - 20,                     // Ascenso rápido
+            time1X,                          // Tiempo 1 - Nivel alto
+            time1X + 10,                     // Inicio descenso
+            time2X - 30,                     // Zona de ciclos - punto bajo
+            time2X - 10,                     // Zona de ciclos - punto alto
+            time2X + 10,                     // Zona de ciclos - punto bajo
+            time3X - 20,                     // Zona de ciclos - punto alto
+            time3X,                          // Tiempo 3 - estabilización
+            time4X - 10,                     // Inicio caída final
+            time4X                           // Tiempo 4 - Temperatura 4
         };
         
-        for (String ruta : posiblesRutas) {
-            try {
-                File archivoImagen = new File(ruta);
-                System.out.println("Buscando imagen en: " + archivoImagen.getAbsolutePath());
-                
-                if (archivoImagen.exists() && archivoImagen.length() > 0) {
-                    System.out.println("✓ Imagen encontrada: " + archivoImagen.getAbsolutePath());
-                    ImageIcon iconoOriginal = new ImageIcon(archivoImagen.getAbsolutePath());
-                    
-                    // Escalar la imagen manteniendo la relación de aspecto
-                    Image imagen = iconoOriginal.getImage();
-                    int anchoDeseado = 300;
-                    int altoDeseado = 200;
-                    
-                    Image imagenEscalada = imagen.getScaledInstance(anchoDeseado, altoDeseado, Image.SCALE_SMOOTH);
-                    return new ImageIcon(imagenEscalada);
-                }
-            } catch (Exception e) {
-                System.out.println("✗ Error cargando imagen desde " + ruta + ": " + e.getMessage());
-            }
+        int[] yPoints = {
+            temp4Y,                          // Inicio en Temperatura 4
+            temp1Y,                          // Ascenso a Temperatura 1
+            temp1Y,                          // Meseta en Temperatura 1 (Tiempo 1)
+            temp3Y,                          // Descenso a Temperatura 3
+            temp2Y,                          // Ciclo - punto bajo (Temperatura 2)
+            temp3Y,                          // Ciclo - punto alto (Temperatura 3)
+            temp2Y,                          // Ciclo - punto bajo (Temperatura 2)
+            temp3Y,                          // Ciclo - punto alto (Temperatura 3)
+            temp3Y,                          // Estabilización en Temperatura 3
+            temp3Y,                          // Preparación para caída
+            temp4Y                           // Caída final a Temperatura 4
+        };
+        
+        // Dibujar la línea del ciclo
+        g2.drawPolyline(xPoints, yPoints, xPoints.length);
+        
+        // Marcar puntos importantes
+        g2.setColor(Color.RED);
+        for (int i = 0; i < xPoints.length; i++) {
+            g2.fillOval(xPoints[i] - 3, yPoints[i] - 3, 6, 6);
         }
         
-        System.out.println("✗ No se pudo cargar la imagen grafica1.JPG");
-        return null;
+        // Área de ciclos
+        g2.setColor(new Color(255, 200, 200, 100));
+        g2.fillRect(time2X - 40, margin, 80, graphHeight);
+        g2.setColor(Color.RED);
+        g2.drawString("30-40 ciclos", time2X - 35, margin + 15);
+        
+        // Título
+        g2.setColor(Color.BLACK);
+        g2.setFont(new Font("Arial", Font.BOLD, 14));
+        g2.drawString("Ciclo Térmico de Referencia", width/2 - 100, margin - 10);
     }
 
-    private void dibujarGrafica(Graphics g) {
+    private void dibujarGraficaTiempoReal(Graphics g) {
         Graphics2D g2 = (Graphics2D) g;
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         
@@ -429,10 +419,11 @@ public class TermocicladorUI extends JFrame {
             return;
         }
         
-        int margin = 60;
+        int margin = 40;
         int graphWidth = width - 2 * margin;
         int graphHeight = height - 2 * margin;
         
+        // Encontrar mínimos y máximos
         double minTemp = Double.MAX_VALUE;
         double maxTemp = -Double.MAX_VALUE;
         long minTime = Long.MAX_VALUE;
@@ -448,6 +439,7 @@ public class TermocicladorUI extends JFrame {
             if (time > maxTime) maxTime = time;
         }
         
+        // Ajustar si todos los valores son iguales
         if (minTemp == maxTemp) {
             minTemp -= 1;
             maxTemp += 1;
@@ -457,19 +449,12 @@ public class TermocicladorUI extends JFrame {
             maxTime += 1;
         }
         
+        // Dibujar ejes
         g2.setColor(Color.BLACK);
         g2.drawLine(margin, margin, margin, margin + graphHeight);
         g2.drawLine(margin, margin + graphHeight, margin + graphWidth, margin + graphHeight);
         
-        g2.drawString(traducir("ejeY"), margin - 40, margin - 10);
-        g2.drawString(traducir("ejeX"), margin + graphWidth - 20, margin + graphHeight + 15);
-        
-        g2.setColor(Color.LIGHT_GRAY);
-        for (int i = 0; i <= 5; i++) {
-            int y = margin + (graphHeight * i / 5);
-            g2.drawLine(margin, y, margin + graphWidth, y);
-        }
-        
+        // Dibujar línea de datos
         g2.setColor(Color.BLUE);
         for (int i = 1; i < temperaturas.size(); i++) {
             int x1 = margin + (int)((tiempos.get(i-1) - minTime) * graphWidth / (maxTime - minTime));
@@ -480,6 +465,7 @@ public class TermocicladorUI extends JFrame {
             g2.drawLine(x1, y1, x2, y2);
         }
         
+        // Dibujar puntos
         g2.setColor(Color.RED);
         for (int i = 0; i < temperaturas.size(); i++) {
             int x = margin + (int)((tiempos.get(i) - minTime) * graphWidth / (maxTime - minTime));
@@ -488,13 +474,20 @@ public class TermocicladorUI extends JFrame {
             g2.fillOval(x - 2, y - 2, 4, 4);
         }
         
+        // Etiquetas
         g2.setColor(Color.BLACK);
-        g2.drawString(String.format("%.1f", maxTemp), margin - 40, margin - 5);
-        g2.drawString(String.format("%.1f", minTemp), margin - 40, margin + graphHeight + 5);
+        g2.drawString(String.format("%.1f°C", maxTemp), 5, margin + 10);
+        g2.drawString(String.format("%.1f°C", minTemp), 5, margin + graphHeight - 5);
         
-        g2.setColor(Color.DARK_GRAY);
-        g2.drawString("Baud Rate: " + BAUD_RATE, width - 150, 20);
+        // Información del puerto
+        if (puertoSeleccionado != null) {
+            g2.drawString("Puerto: " + puertoSeleccionado + " - " + BAUD_RATE + " bps", 
+                         width - 200, 20);
+        }
     }
+
+    // El resto de los métodos permanecen iguales (crearMenu, crearBotones, etc.)
+    // Solo asegúrate de incluir todos los métodos que tenías antes...
 
     private void crearMenu() {
         JMenuBar menuBar = new JMenuBar();
@@ -563,38 +556,13 @@ public class TermocicladorUI extends JFrame {
         btnVerificar.addActionListener(e -> verificarConexion());
         panelBotones.add(btnVerificar);
         
-        JButton btnLimpiarGrafica = new JButton("Limpiar Grafica");
+        JButton btnLimpiarGrafica = new JButton("Limpiar Gráfica");
         btnLimpiarGrafica.addActionListener(e -> limpiarGrafica());
         panelBotones.add(btnLimpiarGrafica);
         
         JButton btnCerrarPuerto = new JButton("Cerrar Puerto");
         btnCerrarPuerto.addActionListener(e -> cerrarPuerto());
         panelBotones.add(btnCerrarPuerto);
-        
-        JButton btnActualizarImagen = new JButton("Actualizar Imagen");
-        btnActualizarImagen.addActionListener(e -> actualizarImagen());
-        panelBotones.add(btnActualizarImagen);
-    }
-
-    private void actualizarImagen() {
-        // Forzar la recreación de la imagen
-        File imagenFile = new File("grafica1.JPG");
-        if (imagenFile.exists()) {
-            imagenFile.delete();
-        }
-        crearImagenAutomatica();
-        
-        // Recargar la interfaz
-        getContentPane().removeAll();
-        setJMenuBar(null);
-        inicializarComponentes();
-        crearMenu();
-        crearBotones();
-        actualizarEstado();
-        revalidate();
-        repaint();
-        
-        JOptionPane.showMessageDialog(this, "Imagen actualizada correctamente");
     }
 
     private void limpiarGrafica() {
@@ -602,7 +570,7 @@ public class TermocicladorUI extends JFrame {
         tiempos.clear();
         tiempoInicio = System.currentTimeMillis();
         panelGrafica.repaint();
-        datosArea.append("\nGrafica limpiada");
+        datosArea.append("\nGráfica limpiada");
     }
 
     private void cerrarPuerto() {
@@ -617,6 +585,8 @@ public class TermocicladorUI extends JFrame {
             actualizarEstado();
         }
     }
+
+    // ... (incluir todos los demás métodos que ya tenías)
 
     private void setLanguage(String lang) {
         Map<String, String> valores = new HashMap<>();
@@ -802,8 +772,8 @@ public class TermocicladorUI extends JFrame {
                     }
                     
                     tiempoInicio = System.currentTimeMillis();
-                    publish("Conexion establecida con " + nombrePuerto + " a " + BAUD_RATE + " baudios");
-                    publish("Configuracion: " + DATA_BITS + " bits de datos, " + STOP_BITS + " bit de parada, Sin paridad");
+                    publish("Conexión establecida con " + nombrePuerto + " a " + BAUD_RATE + " baudios");
+                    publish("Configuración: " + DATA_BITS + " bits de datos, " + STOP_BITS + " bit de parada, Sin paridad");
                     publish("Listo para recibir datos del dispositivo...");
                     
                     serialRunning = true;
@@ -830,7 +800,7 @@ public class TermocicladorUI extends JFrame {
                     if (success) {
                         JOptionPane.showMessageDialog(TermocicladorUI.this, 
                             traducir("msgPuertoConectado") + nombrePuerto + "\nBaud Rate: " + BAUD_RATE, 
-                            "Conexion Exitosa", 
+                            "Conexión Exitosa", 
                             JOptionPane.INFORMATION_MESSAGE);
                     } else {
                         JOptionPane.showMessageDialog(TermocicladorUI.this, 
@@ -949,7 +919,7 @@ public class TermocicladorUI extends JFrame {
 
     private void enviarDatos(String comando) {
         if (puertoSeleccionado == null) {
-            System.out.println("Simulacion - Enviado: " + comando);
+            System.out.println("Simulación - Enviado: " + comando);
         } else {
             try {
                 if (puertoSerie != null && puertoSerie.isOpen()) {
@@ -995,12 +965,12 @@ public class TermocicladorUI extends JFrame {
                     boolean success = get();
                     if (success) {
                         JOptionPane.showMessageDialog(TermocicladorUI.this, 
-                            "Comando de verificacion enviado a " + puertoSeleccionado + " a " + BAUD_RATE + " baudios", 
-                            "Verificacion Enviada", 
+                            "Comando de verificación enviado a " + puertoSeleccionado + " a " + BAUD_RATE + " baudios", 
+                            "Verificación Enviada", 
                             JOptionPane.INFORMATION_MESSAGE);
                     } else {
                         JOptionPane.showMessageDialog(TermocicladorUI.this, 
-                            "Error al verificar la conexion con " + puertoSeleccionado, 
+                            "Error al verificar la conexión con " + puertoSeleccionado, 
                             traducir("titleError"), 
                             JOptionPane.ERROR_MESSAGE);
                     }
