@@ -166,10 +166,76 @@ public class TermocicladorUI extends JFrame {
         tiempos = new ArrayList<>();
         tiempoInicio = System.currentTimeMillis();
         
+        // Crear imagen automáticamente si no existe
+        crearImagenAutomatica();
+        
         inicializarComponentes();
         crearMenu();
         crearBotones();
         actualizarEstado();
+    }
+
+    // Método para crear una imagen automáticamente
+    private void crearImagenAutomatica() {
+        File imagenFile = new File("grafica1.jpg");
+        if (!imagenFile.exists()) {
+            try {
+                // Crear una imagen programáticamente
+                int width = 400;
+                int height = 300;
+                BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+                Graphics2D g2d = image.createGraphics();
+                
+                // Fondo blanco
+                g2d.setColor(Color.WHITE);
+                g2d.fillRect(0, 0, width, height);
+                
+                // Dibujar un gráfico de ejemplo
+                g2d.setColor(Color.BLUE);
+                g2d.setStroke(new BasicStroke(3));
+                
+                // Dibujar ejes
+                g2d.setColor(Color.BLACK);
+                g2d.drawLine(50, 50, 50, 250); // Eje Y
+                g2d.drawLine(50, 250, 350, 250); // Eje X
+                
+                // Etiquetas de ejes
+                g2d.drawString("Temperatura (°C)", 10, 30);
+                g2d.drawString("Tiempo (min)", 300, 270);
+                
+                // Dibujar curva de temperatura
+                g2d.setColor(Color.RED);
+                int[] xPoints = {60, 100, 140, 180, 220, 260, 300, 340};
+                int[] yPoints = {200, 180, 150, 100, 150, 180, 200, 180};
+                g2d.drawPolyline(xPoints, yPoints, 8);
+                
+                // Puntos en la curva
+                g2d.setColor(Color.RED);
+                for (int i = 0; i < xPoints.length; i++) {
+                    g2d.fillOval(xPoints[i] - 3, yPoints[i] - 3, 6, 6);
+                }
+                
+                // Título
+                g2d.setColor(Color.BLACK);
+                g2d.setFont(new Font("Arial", Font.BOLD, 16));
+                g2d.drawString("Ciclo de Temperatura PCR", 120, 30);
+                
+                // Leyenda
+                g2d.setFont(new Font("Arial", Font.PLAIN, 12));
+                g2d.drawString("Desnaturalización: 95°C", 200, 80);
+                g2d.drawString("Alienamiento: 55°C", 200, 100);
+                g2d.drawString("Extensión: 72°C", 200, 120);
+                
+                g2d.dispose();
+                
+                // Guardar la imagen
+                javax.imageio.ImageIO.write(image, "jpg", imagenFile);
+                System.out.println("Imagen creada automáticamente: " + imagenFile.getAbsolutePath());
+                
+            } catch (Exception e) {
+                System.out.println("No se pudo crear la imagen automáticamente: " + e.getMessage());
+            }
+        }
     }
 
     private void inicializarComponentes() {
@@ -230,25 +296,31 @@ public class TermocicladorUI extends JFrame {
             gbc.gridy++;
         }
 
-        // ====== SEÑAL VISUAL EN LUGAR DEL ÁREA DE CICLO ======
+        // ====== IMAGEN EN LUGAR DEL ÁREA DE CICLO ======
         JLabel lblImagen = new JLabel();
         lblImagen.setHorizontalAlignment(SwingConstants.CENTER);
         lblImagen.setVerticalAlignment(SwingConstants.CENTER);
         
-        // Intentar cargar la imagen de múltiples formas
+        // Cargar la imagen (ya debería existir porque se crea automáticamente)
         ImageIcon icono = cargarImagen();
         if (icono != null) {
             lblImagen.setIcon(icono);
-            lblImagen.setToolTipText("Diagrama de referencia del termociclador");
+            lblImagen.setToolTipText("Diagrama de referencia del termociclador - Ciclo PCR");
         } else {
-            // Si no se puede cargar la imagen, mostrar un panel de color con texto
-            lblImagen.setText("<html><div style='text-align: center;'>"
-                    + "<b>Referencia del Termociclador</b><br>"
-                    + "(grafica1.JPG no encontrada)"
+            // Fallback: crear un panel con información
+            lblImagen.setText("<html><div style='text-align: center; padding: 20px;'>"
+                    + "<h3>Referencia del Termociclador</h3>"
+                    + "<p>Ciclo típico de PCR:</p>"
+                    + "<p>• Desnaturalización: 95°C</p>"
+                    + "<p>• Alienamiento: 55-65°C</p>"
+                    + "<p>• Extensión: 72°C</p>"
                     + "</div></html>");
             lblImagen.setOpaque(true);
-            lblImagen.setBackground(new Color(240, 240, 240));
-            lblImagen.setBorder(BorderFactory.createLineBorder(Color.GRAY));
+            lblImagen.setBackground(new Color(230, 240, 255));
+            lblImagen.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(0, 100, 200), 2),
+                BorderFactory.createEmptyBorder(10, 10, 10, 10)
+            ));
             lblImagen.setForeground(Color.DARK_GRAY);
         }
 
@@ -256,14 +328,14 @@ public class TermocicladorUI extends JFrame {
         gbc.gridx = 0;
         gbc.gridwidth = 2;
         gbc.weightx = 1.0;
-        gbc.weighty = 0.3;
+        gbc.weighty = 0.4;
         gbc.fill = GridBagConstraints.BOTH;
         gbc.insets = new Insets(15, 10, 15, 10);
         gbc.anchor = GridBagConstraints.CENTER;
         
-        // Establecer tamaño preferido para el label de imagen
-        lblImagen.setPreferredSize(new Dimension(250, 150));
-        lblImagen.setMinimumSize(new Dimension(200, 120));
+        // Establecer tamaño preferido
+        lblImagen.setPreferredSize(new Dimension(300, 200));
+        lblImagen.setMinimumSize(new Dimension(250, 150));
         
         panelEntradas.add(lblImagen, gbc);
         
@@ -308,12 +380,10 @@ public class TermocicladorUI extends JFrame {
     // Método mejorado para cargar imagen
     private ImageIcon cargarImagen() {
         String[] posiblesRutas = {
-            "resources/grafica1.JPG",
-            "./resources/grafica1.JPG",
-            "grafica1.JPG",
-            "./grafica1.JPG",
-            "src/resources/grafica1.JPG",
-            "bin/resources/grafica1.JPG"
+            "grafica1.jpg",
+            "./grafica1.jpg",
+            "resources/grafica1.jpg",
+            "./resources/grafica1.jpg"
         };
         
         for (String ruta : posiblesRutas) {
@@ -321,38 +391,24 @@ public class TermocicladorUI extends JFrame {
                 File archivoImagen = new File(ruta);
                 System.out.println("Buscando imagen en: " + archivoImagen.getAbsolutePath());
                 
-                if (archivoImagen.exists()) {
-                    System.out.println("Imagen encontrada: " + archivoImagen.getAbsolutePath());
+                if (archivoImagen.exists() && archivoImagen.length() > 0) {
+                    System.out.println("✓ Imagen encontrada: " + archivoImagen.getAbsolutePath());
                     ImageIcon iconoOriginal = new ImageIcon(archivoImagen.getAbsolutePath());
                     
                     // Escalar la imagen manteniendo la relación de aspecto
                     Image imagen = iconoOriginal.getImage();
-                    int anchoDeseado = 250;
-                    int altoDeseado = 150;
+                    int anchoDeseado = 300;
+                    int altoDeseado = 200;
                     
                     Image imagenEscalada = imagen.getScaledInstance(anchoDeseado, altoDeseado, Image.SCALE_SMOOTH);
                     return new ImageIcon(imagenEscalada);
                 }
             } catch (Exception e) {
-                System.out.println("Error cargando imagen desde " + ruta + ": " + e.getMessage());
+                System.out.println("✗ Error cargando imagen desde " + ruta + ": " + e.getMessage());
             }
         }
         
-        // Si no se encuentra en ninguna ruta, intentar como recurso
-        try {
-            java.net.URL imgURL = getClass().getResource("/resources/grafica1.JPG");
-            if (imgURL != null) {
-                System.out.println("Imagen encontrada como recurso: " + imgURL);
-                ImageIcon iconoOriginal = new ImageIcon(imgURL);
-                Image imagen = iconoOriginal.getImage();
-                Image imagenEscalada = imagen.getScaledInstance(250, 150, Image.SCALE_SMOOTH);
-                return new ImageIcon(imagenEscalada);
-            }
-        } catch (Exception e) {
-            System.out.println("Error cargando imagen como recurso: " + e.getMessage());
-        }
-        
-        System.out.println("No se pudo cargar la imagen grafica1.JPG desde ninguna ubicación");
+        System.out.println("✗ No se pudo cargar la imagen grafica1.jpg");
         return null;
     }
 
@@ -513,6 +569,31 @@ public class TermocicladorUI extends JFrame {
         JButton btnCerrarPuerto = new JButton("Cerrar Puerto");
         btnCerrarPuerto.addActionListener(e -> cerrarPuerto());
         panelBotones.add(btnCerrarPuerto);
+        
+        JButton btnActualizarImagen = new JButton("Actualizar Imagen");
+        btnActualizarImagen.addActionListener(e -> actualizarImagen());
+        panelBotones.add(btnActualizarImagen);
+    }
+
+    private void actualizarImagen() {
+        // Forzar la recreación de la imagen
+        File imagenFile = new File("grafica1.jpg");
+        if (imagenFile.exists()) {
+            imagenFile.delete();
+        }
+        crearImagenAutomatica();
+        
+        // Recargar la interfaz
+        getContentPane().removeAll();
+        setJMenuBar(null);
+        inicializarComponentes();
+        crearMenu();
+        crearBotones();
+        actualizarEstado();
+        revalidate();
+        repaint();
+        
+        JOptionPane.showMessageDialog(this, "Imagen actualizada correctamente");
     }
 
     private void limpiarGrafica() {
