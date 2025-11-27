@@ -1,4 +1,3 @@
-
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.text.*;
@@ -15,7 +14,6 @@ import com.fazecast.jSerialComm.*;
 public class TermocicladorUI extends JFrame {
     private JPanel contentPane;
     private JTextArea datosArea;
-    private JTextArea cicloTextArea;
     private Map<String, JTextField> entradas;
     private String archivoActual;
     private SerialPort puertoSerie;
@@ -232,18 +230,49 @@ public class TermocicladorUI extends JFrame {
             gbc.gridy++;
         }
 
-        JLabel lblCiclo = new JLabel(traducir("cicloLabel"));
-        gbc.gridx = 0;
-        gbc.weightx = 0.3;
-        panelEntradas.add(lblCiclo, gbc);
+        // ====== SEÑAL VISUAL EN LUGAR DEL ÁREA DE CICLO ======
+        JLabel lblImagen = new JLabel();
+        lblImagen.setHorizontalAlignment(SwingConstants.CENTER);
+        lblImagen.setVerticalAlignment(SwingConstants.CENTER);
         
-        cicloTextArea = new JTextArea(3, 20);
-        JScrollPane scrollCiclo = new JScrollPane(cicloTextArea);
-        gbc.gridx = 1;
-        gbc.weightx = 0.7;
+        // Intentar cargar la imagen de múltiples formas
+        ImageIcon icono = cargarImagen();
+        if (icono != null) {
+            lblImagen.setIcon(icono);
+            lblImagen.setToolTipText("Diagrama de referencia del termociclador");
+        } else {
+            // Si no se puede cargar la imagen, mostrar un panel de color con texto
+            lblImagen.setText("<html><div style='text-align: center;'>"
+                    + "<b>Referencia del Termociclador</b><br>"
+                    + "(grafica1.JPG no encontrada)"
+                    + "</div></html>");
+            lblImagen.setOpaque(true);
+            lblImagen.setBackground(new Color(240, 240, 240));
+            lblImagen.setBorder(BorderFactory.createLineBorder(Color.GRAY));
+            lblImagen.setForeground(Color.DARK_GRAY);
+        }
+
+        // Configurar para que ocupe el espacio del área de ciclo
+        gbc.gridx = 0;
+        gbc.gridwidth = 2;
+        gbc.weightx = 1.0;
+        gbc.weighty = 0.3;
         gbc.fill = GridBagConstraints.BOTH;
-        panelEntradas.add(scrollCiclo, gbc);
+        gbc.insets = new Insets(15, 10, 15, 10);
+        gbc.anchor = GridBagConstraints.CENTER;
+        
+        // Establecer tamaño preferido para el label de imagen
+        lblImagen.setPreferredSize(new Dimension(250, 150));
+        lblImagen.setMinimumSize(new Dimension(200, 120));
+        
+        panelEntradas.add(lblImagen, gbc);
+        
+        // Restaurar configuración para elementos siguientes
+        gbc.gridwidth = 1;
+        gbc.weighty = 0;
         gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.insets = new Insets(4, 4, 4, 4);
+        gbc.gridy++;
 
         JPanel panelInferior = new JPanel();
         panelInferior.setLayout(new BorderLayout());
@@ -274,6 +303,57 @@ public class TermocicladorUI extends JFrame {
 
         archivoActual = null;
         puertoSeleccionado = null;
+    }
+
+    // Método mejorado para cargar imagen
+    private ImageIcon cargarImagen() {
+        String[] posiblesRutas = {
+            "resources/grafica1.JPG",
+            "./resources/grafica1.JPG",
+            "grafica1.JPG",
+            "./grafica1.JPG",
+            "src/resources/grafica1.JPG",
+            "bin/resources/grafica1.JPG"
+        };
+        
+        for (String ruta : posiblesRutas) {
+            try {
+                File archivoImagen = new File(ruta);
+                System.out.println("Buscando imagen en: " + archivoImagen.getAbsolutePath());
+                
+                if (archivoImagen.exists()) {
+                    System.out.println("Imagen encontrada: " + archivoImagen.getAbsolutePath());
+                    ImageIcon iconoOriginal = new ImageIcon(archivoImagen.getAbsolutePath());
+                    
+                    // Escalar la imagen manteniendo la relación de aspecto
+                    Image imagen = iconoOriginal.getImage();
+                    int anchoDeseado = 250;
+                    int altoDeseado = 150;
+                    
+                    Image imagenEscalada = imagen.getScaledInstance(anchoDeseado, altoDeseado, Image.SCALE_SMOOTH);
+                    return new ImageIcon(imagenEscalada);
+                }
+            } catch (Exception e) {
+                System.out.println("Error cargando imagen desde " + ruta + ": " + e.getMessage());
+            }
+        }
+        
+        // Si no se encuentra en ninguna ruta, intentar como recurso
+        try {
+            java.net.URL imgURL = getClass().getResource("/resources/grafica1.JPG");
+            if (imgURL != null) {
+                System.out.println("Imagen encontrada como recurso: " + imgURL);
+                ImageIcon iconoOriginal = new ImageIcon(imgURL);
+                Image imagen = iconoOriginal.getImage();
+                Image imagenEscalada = imagen.getScaledInstance(250, 150, Image.SCALE_SMOOTH);
+                return new ImageIcon(imagenEscalada);
+            }
+        } catch (Exception e) {
+            System.out.println("Error cargando imagen como recurso: " + e.getMessage());
+        }
+        
+        System.out.println("No se pudo cargar la imagen grafica1.JPG desde ninguna ubicación");
+        return null;
     }
 
     private void dibujarGrafica(Graphics g) {
@@ -466,7 +546,6 @@ public class TermocicladorUI extends JFrame {
                 }
             }
         }
-        String ciclo = (cicloTextArea != null) ? cicloTextArea.getText() : "";
 
         currentLang = lang;
 
@@ -484,9 +563,6 @@ public class TermocicladorUI extends JFrame {
                 }
             }
         }
-        if (cicloTextArea != null) {
-            cicloTextArea.setText(ciclo);
-        }
 
         actualizarEstado();
         revalidate();
@@ -499,9 +575,6 @@ public class TermocicladorUI extends JFrame {
             if (campo != null) {
                 campo.setText("");
             }
-        }
-        if (cicloTextArea != null) {
-            cicloTextArea.setText("");
         }
         archivoActual = null;
         actualizarEstado();
@@ -541,7 +614,6 @@ public class TermocicladorUI extends JFrame {
                     writer.println(clave + ": " + campo.getText());
                 }
             }
-            writer.println("ciclo: " + cicloTextArea.getText());
             
             JOptionPane.showMessageDialog(this, traducir("msgDatosGuardados"));
             actualizarEstado();
@@ -570,10 +642,6 @@ public class TermocicladorUI extends JFrame {
                         campo.setText(datos.get(clave));
                     }
                 }
-            }
-            
-            if (datos.containsKey("ciclo")) {
-                cicloTextArea.setText(datos.get("ciclo"));
             }
 
             if (datos.containsKey("numCiclos")) {
