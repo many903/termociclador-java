@@ -178,7 +178,7 @@ public class TermocicladorUI extends JFrame {
 
     // Método para crear una imagen automáticamente
     private void crearImagenAutomatica() {
-        File imagenFile = new File("grafica1.jpg");
+        File imagenFile = new File("grafica1.JPG");
         if (!imagenFile.exists()) {
             try {
                 // Crear una imagen programáticamente
@@ -230,7 +230,7 @@ public class TermocicladorUI extends JFrame {
                 g2d.dispose();
                 
                 // Guardar la imagen
-                javax.imageio.ImageIO.write(image, "jpg", imagenFile);
+                javax.imageio.ImageIO.write(image, "JPG", imagenFile);
                 System.out.println("Imagen creada automáticamente: " + imagenFile.getAbsolutePath());
                 
             } catch (Exception e) {
@@ -297,7 +297,7 @@ public class TermocicladorUI extends JFrame {
             gbc.gridy++;
         }
 
-        // ====== IMAGEN EN LUGAR DEL ÁREA DE CICLO ======
+        // ====== IMAGEN EN LUGAR DEL AREA DE CICLO ======
         JLabel lblImagen = new JLabel();
         lblImagen.setHorizontalAlignment(SwingConstants.CENTER);
         lblImagen.setVerticalAlignment(SwingConstants.CENTER);
@@ -381,10 +381,10 @@ public class TermocicladorUI extends JFrame {
     // Método mejorado para cargar imagen
     private ImageIcon cargarImagen() {
         String[] posiblesRutas = {
-            "grafica1.jpg",
-            "./grafica1.jpg",
-            "resources/grafica1.jpg",
-            "./resources/grafica1.jpg"
+            "grafica1.JPG",
+            "./grafica1.JPG",
+            "resources/grafica1.JPG",
+            "./resources/grafica1.JPG"
         };
         
         for (String ruta : posiblesRutas) {
@@ -409,7 +409,7 @@ public class TermocicladorUI extends JFrame {
             }
         }
         
-        System.out.println("✗ No se pudo cargar la imagen grafica1.jpg");
+        System.out.println("✗ No se pudo cargar la imagen grafica1.JPG");
         return null;
     }
 
@@ -578,7 +578,7 @@ public class TermocicladorUI extends JFrame {
 
     private void actualizarImagen() {
         // Forzar la recreación de la imagen
-        File imagenFile = new File("grafica1.jpg");
+        File imagenFile = new File("grafica1.JPG");
         if (imagenFile.exists()) {
             imagenFile.delete();
         }
